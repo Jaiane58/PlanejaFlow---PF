@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
-    <!-- Firebase SDKs - Versão compatível -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -18,7 +18,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* VARIÁVEIS CSS PARA TEMAS */
         :root {
             --bg-gradient-start: #0a0f1e;
             --bg-gradient-end: #050810;
@@ -43,7 +42,6 @@
             --badge-category-bg: rgba(139, 92, 246, 0.2);
         }
         
-        /* TEMA CLARO */
         body.theme-light {
             --bg-gradient-start: #e2e8f0;
             --bg-gradient-end: #cbd5e1;
@@ -65,7 +63,6 @@
             --badge-category-bg: #e9d5ff;
         }
         
-        /* TEMA NEON */
         body.theme-neon {
             --bg-gradient-start: #0a0f1e;
             --bg-gradient-end: #000000;
@@ -191,24 +188,17 @@
         }
         .hidden { display: none !important; }
         
-        /* DASHBOARD PROFISSIONAL */
-        .app-header {
+        /* DASHBOARD */
+        .app-header, .period-card, .card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             border-radius: 28px;
             padding: 20px;
             margin-bottom: 18px;
             border: 1px solid var(--card-border);
+            transition: all 0.3s;
         }
-        
-        .period-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 20px;
-            margin-bottom: 18px;
-            border: 1px solid var(--card-border);
-        }
+        .card:hover { transform: translateY(-2px); border-color: var(--card-border-hover); }
         
         .balance-card {
             background: linear-gradient(135deg, #1a1f3a, #0f1228);
@@ -227,7 +217,6 @@
             background: linear-gradient(135deg, #0a0f1e, #000000);
             border: 1px solid #00ff88;
         }
-        
         .balance-card::before {
             content: '';
             position: absolute;
@@ -268,7 +257,6 @@
             background: var(--hover-solid);
             color: white;
         }
-        
         .user-info .question-label {
             font-size: 0.65rem;
             color: var(--text-secondary);
@@ -308,26 +296,76 @@
             color: var(--accent-primary);
         }
         
-        .debt-info {
+        .debt-info { font-size: 0.7rem; margin-top: 4px; opacity: 0.8; color: var(--danger); }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .stat-card .label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        .stat-card .value {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 6px;
+            color: var(--accent-primary);
+        }
+        .stat-card .trend-up { color: #4ade80; font-size: 0.7rem; }
+        .stat-card .trend-down { color: #f87171; font-size: 0.7rem; }
+        
+        .top5-list {
+            margin-top: 12px;
+        }
+        .top5-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .top5-rank {
+            width: 28px;
+            height: 28px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 0.7rem;
-            margin-top: 4px;
-            opacity: 0.8;
+            font-weight: 700;
+            color: white;
+        }
+        .top5-info {
+            flex: 1;
+        }
+        .top5-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .top5-category {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+        .top5-value {
+            font-weight: 700;
             color: var(--danger);
         }
         
-        /* TIMELINE PROFISSIONAL */
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 20px;
-            margin-bottom: 18px;
-            border: 1px solid var(--card-border);
-            transition: all 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--card-border-hover);
+        .category-donut {
+            max-width: 200px;
+            margin: 0 auto;
         }
         
         h3 {
@@ -421,12 +459,8 @@
             font-weight: 800;
             font-size: 0.9rem;
         }
-        .timeline-value.income {
-            color: var(--success);
-        }
-        .timeline-value.expense {
-            color: var(--danger);
-        }
+        .timeline-value.income { color: var(--success); }
+        .timeline-value.expense { color: var(--danger); }
         .timeline-details {
             display: flex;
             gap: 12px;
@@ -468,42 +502,55 @@
             border-radius: 24px;
         }
         
-        /* EXTRATO PROFISSIONAL */
-        .list-item {
+        /* EXTRATO MELHORADO */
+        .extrato-card {
+            background: var(--timeline-bg);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--card-border);
+            transition: all 0.2s;
+        }
+        .extrato-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateX(4px);
+        }
+        .extrato-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 8px;
         }
-        .item-main {
+        .extrato-date {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+        .extrato-value {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .extrato-value.positive { color: var(--success); }
+        .extrato-value.negative { color: var(--danger); }
+        .extrato-desc {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .extrato-footer {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 14px;
-            flex: 1;
         }
-        .cat-icon {
-            width: 44px;
-            height: 44px;
+        .extrato-category {
+            font-size: 0.65rem;
             background: var(--badge-category-bg);
-            border-radius: 18px;
-            display: flex;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        .badge-category {
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: var(--badge-category-bg);
-            padding: 2px 8px;
-            border-radius: 30px;
-            display: inline-block;
-            color: var(--accent-primary);
+            gap: 4px;
         }
         
-        /* INVESTIMENTOS */
         .investment-tab-bar {
             display: flex;
             gap: 8px;
@@ -577,11 +624,7 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
         }
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; }
         
         .investment-list-item {
             display: flex;
@@ -607,7 +650,6 @@
             color: var(--accent-primary);
         }
         
-        /* METAS */
         .filter-bar {
             display: flex;
             gap: 8px;
@@ -788,7 +830,6 @@
             margin: 0;
         }
         
-        /* IMPORTAÇÃO PDF */
         .import-area {
             border: 2px dashed var(--accent-primary);
             border-radius: 24px;
@@ -813,7 +854,6 @@
             border-bottom: 1px solid var(--card-border);
         }
         
-        /* CONFIGURAÇÕES */
         .config-section { margin-bottom: 24px; }
         .config-option {
             display: flex;
@@ -1254,70 +1294,45 @@
         let portfolioChart = null;
         let currentGoalFilter = "all";
         let goalsDistributionChart = null;
+        let categoryChart = null;
         
-        // Dados do usuário no Firestore
         let userData = {
-            name: null,
-            quote: "📊 Planeje o fluxo, colha os resultados",
-            card1Name: "Visa Platinum",
-            card2Name: "Mastercard Black",
-            customCategories: [],
-            months: {},
-            actionProgress: { positive: {}, negative: {} },
-            theme: "dark",
-            fontSize: "medium",
-            animations: true,
-            glowEffect: true,
-            compactMode: false
+            name: null, quote: "📊 Planeje o fluxo, colha os resultados",
+            card1Name: "Visa Platinum", card2Name: "Mastercard Black",
+            customCategories: [], months: {}, actionProgress: { positive: {}, negative: {} },
+            theme: "dark", fontSize: "medium", animations: true, glowEffect: true, compactMode: false
         };
         
         // ==================== FUNÇÕES FIRESTORE ====================
         async function loadUserDataFromFirestore() {
             if (!currentUser) return;
-            
             const docRef = db_firestore.collection('users').doc(currentUser.uid);
             const doc = await docRef.get();
-            
             if (doc.exists) {
                 userData = doc.data();
             } else {
-                // Criar documento padrão para novo usuário
                 userData = {
                     name: currentUser.email ? currentUser.email.split('@')[0] : "Usuário",
                     quote: "📊 Planeje o fluxo, colha os resultados",
-                    card1Name: "Visa Platinum",
-                    card2Name: "Mastercard Black",
-                    customCategories: [],
-                    months: {},
-                    actionProgress: { positive: {}, negative: {} },
-                    theme: "dark",
-                    fontSize: "medium",
-                    animations: true,
-                    glowEffect: true,
-                    compactMode: false
+                    card1Name: "Visa Platinum", card2Name: "Mastercard Black",
+                    customCategories: [], months: {}, actionProgress: { positive: {}, negative: {} },
+                    theme: "dark", fontSize: "medium", animations: true, glowEffect: true, compactMode: false
                 };
                 await docRef.set(userData);
             }
-            
             if (!userData.months) userData.months = {};
             if (!userData.customCategories) userData.customCategories = [];
             if (!userData.actionProgress) userData.actionProgress = { positive: {}, negative: {} };
-            
             applyStyleSettings();
             renderAll();
         }
         
         async function saveUserDataToFirestore() {
             if (!currentUser) return;
-            const docRef = db_firestore.collection('users').doc(currentUser.uid);
-            await docRef.set(userData);
+            await db_firestore.collection('users').doc(currentUser.uid).set(userData);
         }
         
-        function saveGlobal() {
-            saveUserDataToFirestore();
-            renderAll();
-            applyStyleSettings();
-        }
+        function saveGlobal() { saveUserDataToFirestore(); renderAll(); applyStyleSettings(); }
         
         // ==================== AUTENTICAÇÃO ====================
         function showLogin() {
@@ -1358,91 +1373,50 @@
             setTimeout(() => successDiv.classList.add('hidden'), 5000);
         }
         
-        // Login
         document.getElementById('btnLogin')?.addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            if (!email || !password) {
-                showError('Preencha e-mail e senha');
-                return;
-            }
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                showError(error.message);
-            }
+            if (!email || !password) { showError('Preencha e-mail e senha'); return; }
+            try { await auth.signInWithEmailAndPassword(email, password); } 
+            catch (error) { showError(error.message); }
         });
         
-        // Criar conta
         document.getElementById('btnRegister')?.addEventListener('click', async () => {
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
-            if (!email || !password) {
-                showError('Preencha e-mail e senha');
-                return;
-            }
-            if (password.length < 6) {
-                showError('A senha deve ter no mínimo 6 caracteres');
-                return;
-            }
-            try {
-                await auth.createUserWithEmailAndPassword(email, password);
-                showSuccess('Conta criada com sucesso!');
-            } catch (error) {
-                showError(error.message);
-            }
+            if (!email || !password) { showError('Preencha e-mail e senha'); return; }
+            if (password.length < 6) { showError('A senha deve ter no mínimo 6 caracteres'); return; }
+            try { await auth.createUserWithEmailAndPassword(email, password); showSuccess('Conta criada com sucesso!'); } 
+            catch (error) { showError(error.message); }
         });
         
-        // Recuperar senha
         document.getElementById('btnReset')?.addEventListener('click', async () => {
             const email = document.getElementById('resetEmail').value;
-            if (!email) {
-                showError('Digite seu e-mail');
-                return;
-            }
+            if (!email) { showError('Digite seu e-mail'); return; }
             try {
                 await auth.sendPasswordResetEmail(email);
                 showSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
                 showLogin();
-            } catch (error) {
-                showError(error.message);
-            }
+            } catch (error) { showError(error.message); }
         });
         
-        // Link mágico
         document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
-            if (!email) {
-                showError('Digite seu e-mail primeiro');
-                return;
-            }
+            if (!email) { showError('Digite seu e-mail primeiro'); return; }
             try {
-                const actionCodeSettings = {
-                    url: window.location.href,
-                    handleCodeInApp: true
-                };
+                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
                 await auth.sendSignInLinkToEmail(email, actionCodeSettings);
                 localStorage.setItem('emailForSignIn', email);
                 showSuccess('Link mágico enviado! Verifique seu e-mail.');
-            } catch (error) {
-                showError(error.message);
-            }
+            } catch (error) { showError(error.message); }
         });
         
-        // Verificar link mágico
         if (auth.isSignInWithEmailLink(window.location.href)) {
             let email = localStorage.getItem('emailForSignIn');
-            if (!email) {
-                email = prompt('Digite seu e-mail para confirmar o login');
-            }
-            if (email) {
-                auth.signInWithEmailLink(email, window.location.href)
-                    .then(() => localStorage.removeItem('emailForSignIn'))
-                    .catch(error => showError(error.message));
-            }
+            if (!email) email = prompt('Digite seu e-mail para confirmar o login');
+            if (email) auth.signInWithEmailLink(email, window.location.href).then(() => localStorage.removeItem('emailForSignIn')).catch(error => showError(error.message));
         }
         
-        // Monitorar autenticação
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
@@ -1501,10 +1475,14 @@
         ];
         
         function getAllCategories() { return [...BASE_CATEGORIES, ...(userData.customCategories || [])]; }
+        
         function getCategoryIcon(categoryName) {
             const allCats = getAllCategories();
             const found = allCats.find(c => c.name === categoryName);
-            return found ? found.icon : "fas fa-receipt";
+            if (found) return found.icon;
+            const cleanName = categoryName.replace(/[💼🚀📈🛒🍽️🏠⚡🚗🎓❤️🎉🏦]/g, '').trim();
+            const foundClean = allCats.find(c => c.name.includes(cleanName));
+            return foundClean ? foundClean.icon : "fas fa-receipt";
         }
         
         // ==================== FUNÇÕES DO APP ====================
@@ -1565,64 +1543,153 @@
             if (legendDiv) legendDiv.innerHTML = legendHtml;
         }
         
-        // ==================== IMPORTAÇÃO PDF (OPÇÃO C) ====================
+        // ==================== ACUMULADO DO ANO ====================
+        function calcularAcumuladoAno() {
+            let totalReceitas = 0, totalDespesas = 0, totalInvestimentos = 0;
+            for (let mes = 0; mes <= currentMonth; mes++) {
+                const key = `${currentYear}-${mes}`;
+                const monthData = userData.months[key] || { transactions: [], investments: [] };
+                monthData.transactions.forEach(t => {
+                    if (t.type === 'in') totalReceitas += t.value;
+                    else totalDespesas += t.value;
+                });
+                monthData.investments.forEach(i => { totalInvestimentos += i.amount; });
+            }
+            return { totalReceitas, totalDespesas, totalInvestimentos, economia: totalReceitas - totalDespesas };
+        }
+        
+        // ==================== TOP 5 GASTOS ====================
+        function getTop5Gastos() {
+            const monthData = getMonthData();
+            const despesas = monthData.transactions.filter(t => t.type === 'out');
+            despesas.sort((a, b) => b.value - a.value);
+            return despesas.slice(0, 5);
+        }
+        
+        // ==================== GASTOS POR CATEGORIA ====================
+        function getGastosPorCategoria() {
+            const monthData = getMonthData();
+            const categorias = {};
+            monthData.transactions.forEach(t => {
+                if (t.type === 'out') {
+                    if (!categorias[t.category]) categorias[t.category] = 0;
+                    categorias[t.category] += t.value;
+                }
+            });
+            return categorias;
+        }
+        
+        function updateCategoryChart() {
+            const gastos = getGastosPorCategoria();
+            const labels = Object.keys(gastos);
+            const values = Object.values(gastos);
+            const ctx = document.getElementById('categoryChart')?.getContext('2d');
+            if (!ctx) return;
+            if (categoryChart) categoryChart.destroy();
+            if (labels.length === 0) {
+                document.getElementById('category-chart-container').innerHTML = '<div class="empty-state">Nenhuma despesa registrada</div>';
+                return;
+            }
+            const colors = ['#8b5cf6', '#ec489a', '#f59e0b', '#4ade80', '#fbbf24', '#3b82f6', '#ef4444', '#06b6d4', '#84cc16', '#d946ef'];
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 } } }, tooltip: { callbacks: { label: function(context) { let total = values.reduce((a,b) => a + b, 0); let percentage = ((context.raw / total) * 100).toFixed(1); return `${context.label}: R$ ${context.raw.toLocaleString('pt-BR')} (${percentage}%)`; } } } }, cutout: '60%' }
+            });
+        }
+        
+        // ==================== IMPORTAÇÃO PDF ====================
         let pdfjsLib = window['pdfjs-dist/build/pdf'];
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        
         let importedTransactions = [];
+        let selectedCardForImport = null;
+        
+        function selectCardForImport() {
+            return new Promise((resolve) => {
+                const cardOptions = [
+                    { value: 'money', label: '🏦 Dinheiro/Pix' },
+                    { value: 'card1', label: `💳 ${userData.card1Name}` },
+                    { value: 'card2', label: `💳 ${userData.card2Name}` }
+                ];
+                let optionsHtml = cardOptions.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+                const modalHtml = `
+                    <div id="cardSelectModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:10000;">
+                        <div style="background:var(--card-bg); border-radius:28px; padding:24px; width:300px;">
+                            <h3 style="margin-bottom:16px;">Selecionar cartão</h3>
+                            <select id="cardSelect" style="margin-bottom:16px;">${optionsHtml}</select>
+                            <button id="confirmCardSelect" style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));">Confirmar</button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                document.getElementById('confirmCardSelect').onclick = () => {
+                    const selected = document.getElementById('cardSelect').value;
+                    document.getElementById('cardSelectModal').remove();
+                    resolve(selected);
+                };
+            });
+        }
         
         async function parsePDF(file) {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             let fullText = '';
-            
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
                 const pageText = textContent.items.map(item => item.str).join(' ');
                 fullText += pageText + '\n';
             }
-            
             return extractTransactionsFromText(fullText);
         }
         
         function extractTransactionsFromText(text) {
             const transactions = [];
-            // Padrão comum em extratos: DATA DESCRIÇÃO VALOR
             const lines = text.split('\n');
+            let ignoreNext = false;
             
             for (let line of lines) {
-                // Tentar encontrar padrão de data (DD/MM ou DD/MM/AAAA)
+                const lowerLine = line.toLowerCase();
+                if (lowerLine.includes('saldo anterior') || lowerLine.includes('saldo atual') || lowerLine.includes('saldo disponível')) {
+                    ignoreNext = true;
+                    continue;
+                }
+                ignoreNext = false;
+                
                 const dateMatch = line.match(/(\d{2}\/\d{2}(?:\/\d{4})?)/);
-                // Tentar encontrar valor (R$ 123,45 ou 123,45)
                 const valueMatch = line.match(/R?\$?\s*(\d{1,3}(?:\.\d{3})*,\d{2})/);
-                // Tentar encontrar descrição (texto entre data e valor)
                 
                 if (dateMatch && valueMatch) {
-                    let description = line
-                        .replace(dateMatch[0], '')
-                        .replace(valueMatch[0], '')
-                        .trim();
-                    
+                    let description = line.replace(dateMatch[0], '').replace(valueMatch[0], '').trim();
                     let valueStr = valueMatch[1].replace(/\./g, '').replace(',', '.');
                     let value = parseFloat(valueStr);
-                    let type = value > 0 ? 'in' : 'out';
+                    let type = 'out';
                     
-                    if (description.toLowerCase().includes('pix') || description.toLowerCase().includes('ted')) {
-                        description = description.toUpperCase();
+                    if (line.toUpperCase().includes('PIX RECEBIDO') || line.toUpperCase().includes('TED RECEBIDA') || line.toUpperCase().includes('DEPOSITO')) {
+                        type = 'in';
+                    }
+                    if (line.toUpperCase().includes('PIX ENVIADO') || line.toUpperCase().includes('TED ENVIADA') || line.toUpperCase().includes('COMPRA')) {
+                        type = 'out';
+                    }
+                    if (line.includes('-')) type = 'out';
+                    if (line.includes('+') && !line.toUpperCase().includes('PIX ENVIADO')) type = 'in';
+                    
+                    let category = detectCategory(description);
+                    let method = 'money';
+                    if (line.toUpperCase().includes('CARTAO') || line.toUpperCase().includes('VISA') || line.toUpperCase().includes('MASTERCARD')) {
+                        method = 'card1';
                     }
                     
                     transactions.push({
                         date: dateMatch[0],
-                        description: description.substring(0, 50),
-                        value: Math.abs(value),
+                        description: description.substring(0, 50) || "Transação",
+                        value: value,
                         type: type,
-                        category: detectCategory(description),
-                        method: detectMethod(description)
+                        category: category,
+                        method: method
                     });
                 }
             }
-            
             return transactions;
         }
         
@@ -1643,49 +1710,26 @@
             return '📝 Outros';
         }
         
-        function detectMethod(description) {
-            const descLower = description.toLowerCase();
-            if (descLower.includes('pix')) return 'money';
-            if (descLower.includes('credito') || descLower.includes('cartão')) return 'card1';
-            return 'money';
-        }
-        
         function showImportPreview(transactions) {
             const previewDiv = document.getElementById('import-preview');
             if (!previewDiv) return;
-            
             if (transactions.length === 0) {
                 previewDiv.innerHTML = '<div class="empty-state">Nenhuma transação encontrada no PDF</div>';
                 return;
             }
-            
-            let html = '<h3>📋 Prévia das transações encontradas</h3>';
-            html += '<table class="preview-table">';
-            html += '<tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Categoria</th></tr>';
-            
+            let html = '<h3>📋 Prévia das transações encontradas</h3><table class="preview-table"><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Categoria</th></tr>';
             transactions.forEach(t => {
-                html += `<tr>
-                    <td>${t.date}</td>
-                    <td>${t.description}</td>
-                    <td style="color:${t.type === 'in' ? '#4ade80' : '#f87171'}">R$ ${t.value.toFixed(2)}</td>
-                    <td>${t.type === 'in' ? '💰 Entrada' : '💸 Saída'}</td>
-                    <td>${t.category}</td>
-                </tr>`;
+                html += `<tr><td>${t.date}</td><td>${t.description}</td><td style="color:${t.type === 'in' ? '#4ade80' : '#f87171'}">R$ ${t.value.toFixed(2)}</td><td>${t.type === 'in' ? '💰 Entrada' : '💸 Saída'}</td><td>${t.category}</td></tr>`;
             });
-            
-            html += '</table>';
-            html += '<button onclick="confirmImport()" style="margin-top:16px;">✅ Confirmar importação</button>';
+            html += '</table><button onclick="confirmImport()" style="margin-top:16px;">✅ Confirmar importação</button>';
             previewDiv.innerHTML = html;
         }
         
-        function confirmImport() {
+        async function confirmImport() {
+            const cardMethod = await selectCardForImport();
             let monthData = getMonthData();
             importedTransactions.forEach(t => {
-                monthData.transactions.unshift({ 
-                    ...t, 
-                    id: Date.now() + Math.random(),
-                    date: t.date || new Date().toLocaleDateString()
-                });
+                monthData.transactions.unshift({ ...t, id: Date.now() + Math.random(), method: cardMethod, date: t.date || new Date().toLocaleDateString() });
             });
             saveGlobal();
             importedTransactions = [];
@@ -1695,7 +1739,7 @@
             renderHome();
         }
         
-        // ==================== RENDERIZAÇÃO DAS TELAS ====================
+        // ==================== RENDERIZAÇÃO DASHBOARD ====================
         function renderHome() {
             let monthData = getMonthData();
             let transactions = monthData.transactions || [];
@@ -1716,6 +1760,9 @@
             let netWorth = cashBalance + totalInvestments - totalDebt;
             let monthlySurplus = cashBalance - totalDebt;
             
+            const acumulado = calcularAcumuladoAno();
+            const top5 = getTop5Gastos();
+            
             let timelineHtml = `<div class="timeline-container">`;
             if(transactions.length === 0) {
                 timelineHtml = `<div class="empty-timeline"><i class="fas fa-inbox" style="font-size:2rem; opacity:0.5; margin-bottom:8px; display:block;"></i>Nenhuma movimentação neste período</div>`;
@@ -1725,9 +1772,7 @@
                     const isIncome = t.type === 'in';
                     timelineHtml += `
                         <div class="timeline-item">
-                            <div class="timeline-icon ${isIncome ? 'income' : 'expense'}">
-                                <i class="${iconClass}"></i>
-                            </div>
+                            <div class="timeline-icon ${isIncome ? 'income' : 'expense'}"><i class="${iconClass}"></i></div>
                             <div class="timeline-content">
                                 <div class="timeline-header">
                                     <span class="timeline-desc">${t.description}</span>
@@ -1744,6 +1789,26 @@
                 });
             }
             timelineHtml += `</div>`;
+            
+            let top5Html = `<div class="top5-list">`;
+            if (top5.length === 0) {
+                top5Html += `<div class="empty-state">Nenhum gasto registrado</div>`;
+            } else {
+                top5.forEach((gasto, index) => {
+                    const iconClass = getCategoryIcon(gasto.category);
+                    top5Html += `
+                        <div class="top5-item">
+                            <div class="top5-rank">${index + 1}</div>
+                            <div class="top5-info">
+                                <div class="top5-name">${gasto.description}</div>
+                                <div class="top5-category"><i class="${iconClass}"></i> ${gasto.category}</div>
+                            </div>
+                            <div class="top5-value">- R$ ${gasto.value.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+            }
+            top5Html += `</div>`;
             
             let headerHtml = `
                 <div class="app-header">
@@ -1764,10 +1829,7 @@
                         <input type="number" id="year-selector" min="2023" max="2035" value="${selectedYear}" style="width:95px">
                     </div>
                     <button class="period-confirm-btn" onclick="confirmPeriod()"><i class="fas fa-check-circle"></i> Confirmar período</button>
-                    <div class="current-period-badge">
-                        <small>📅 Período atual</small>
-                        <strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong>
-                    </div>
+                    <div class="current-period-badge"><small>📅 Período atual</small><strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong></div>
                 </div>
                 <div class="balance-card ${netWorth>0?'positive':netWorth<0?'negative':'neutral'}">
                     <p style="font-size:0.65rem; opacity:0.8;">📊 PATRIMÔNIO LÍQUIDO</p>
@@ -1783,11 +1845,28 @@
                         <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);">R$ ${monthlySurplus.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
                     </div>
                 </div>
-                <div class="card"><h3><i class="fas fa-history"></i> Últimas movimentações</h3>${timelineHtml}</div>
+                <div class="stats-row">
+                    <div class="stat-card"><div class="label">📈 RECEITAS</div><div class="value">R$ ${acumulado.totalReceitas.toLocaleString('pt-BR')}</div></div>
+                    <div class="stat-card"><div class="label">📉 DESPESAS</div><div class="value">R$ ${acumulado.totalDespesas.toLocaleString('pt-BR')}</div></div>
+                    <div class="stat-card"><div class="label">💚 ECONOMIA</div><div class="value">R$ ${acumulado.economia.toLocaleString('pt-BR')}</div></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-chart-pie"></i> Distribuição dos Gastos</h3>
+                    <div class="category-donut"><canvas id="categoryChart" width="200" height="200"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-fire"></i> Top 5 Gastos do Mês</h3>
+                    ${top5Html}
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-history"></i> Últimas movimentações</h3>
+                    ${timelineHtml}
+                </div>
             `;
             document.getElementById('tab-home').innerHTML = headerHtml;
             document.getElementById('month-selector').onchange = function() { selectedMonth = parseInt(this.value); };
             document.getElementById('year-selector').onchange = function() { selectedYear = parseInt(this.value); };
+            updateCategoryChart();
         }
         
         function renderExtrato() {
@@ -1806,18 +1885,16 @@
                     <input type="text" id="t-desc" placeholder="Descrição">
                     <button onclick="addTransaction()">Salvar lançamento</button>
                 </div>
-                
                 <div class="card">
                     <h3>📄 Importar extrato (PDF)</h3>
                     <div id="pdf-import-area" class="import-area" onclick="document.getElementById('pdf-file').click()">
                         <i class="fas fa-file-pdf" style="font-size:2rem; margin-bottom:8px; display:block;"></i>
                         <p>Clique para selecionar um arquivo PDF</p>
-                        <p style="font-size:0.7rem; margin-top:4px;">Formatos: Nubank, Inter, Itaú, Bradesco, Santander</p>
+                        <p style="font-size:0.7rem; margin-top:4px;">Formatos: Sicredi, Nubank, Inter, Itaú, Bradesco, Santander</p>
                         <input type="file" id="pdf-file" accept=".pdf" style="display:none">
                     </div>
                     <div id="import-preview"></div>
                 </div>
-                
                 <div class="card">
                     <h3>📋 Histórico completo - ${getMonthDisplay()}</h3>
             `;
@@ -1825,21 +1902,18 @@
             if(transactions.length === 0) {
                 html += `<div class="empty-state">Nenhum lançamento</div>`;
             }
-            transactions.forEach(t=>{
+            transactions.forEach(t => {
                 let iconClass = getCategoryIcon(t.category);
                 html += `
-                    <div class="list-item">
-                        <div class="item-main">
-                            <div class="cat-icon"><i class="${iconClass}"></i></div>
-                            <div>
-                                <b style="color:var(--text-primary);">${t.description}</b><br>
-                                <span class="badge-category"><i class="${iconClass}"></i> ${t.category}</span><br>
-                                <small style="color:var(--text-secondary);">${t.date}</small>
-                            </div>
+                    <div class="extrato-card">
+                        <div class="extrato-header">
+                            <span class="extrato-date"><i class="far fa-calendar-alt"></i> ${t.date || new Date().toLocaleDateString()}</span>
+                            <span class="extrato-value ${t.type === 'in' ? 'positive' : 'negative'}">${t.type === 'in' ? '+' : '-'} R$ ${t.value.toFixed(2)}</span>
                         </div>
-                        <div style="color:${t.type==='in'?'#4ade80':'#f87171'}">
-                            <b>${t.type==='in'?'+':'-'} R$ ${t.value.toFixed(2)}</b><br>
-                            <button onclick="deleteItem('transactions',${t.id})" class="btn-del">x</button>
+                        <div class="extrato-desc">${t.description}</div>
+                        <div class="extrato-footer">
+                            <span class="extrato-category"><i class="${iconClass}"></i> ${t.category}</span>
+                            <button onclick="deleteItem('transactions',${t.id})" class="btn-del"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -1847,7 +1921,6 @@
             html += `</div>`;
             document.getElementById('extrato-content').innerHTML = html;
             
-            // Evento de importação PDF
             document.getElementById('pdf-file')?.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -2227,7 +2300,6 @@
         
         function setGoalFilter(filter) { currentGoalFilter = filter; renderMetas(); }
         
-        // ==================== CONFIGURAÇÕES ====================
         function saveCards() { 
             const c1 = document.getElementById('c1-n')?.value.trim(); 
             const c2 = document.getElementById('c2-n')?.value.trim();
@@ -2268,86 +2340,31 @@
                 <div class="card">
                     <h3><i class="fas fa-palette"></i> Personalização Visual</h3>
                     <div class="config-section">
-                        <div class="config-option">
-                            <label>🎨 Tema</label>
-                            <select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)">
-                                <option value="dark" ${userData.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option>
-                                <option value="light" ${userData.theme === 'light' ? 'selected' : ''}>☀️ Claro</option>
-                                <option value="neon" ${userData.theme === 'neon' ? 'selected' : ''}>💚 Neon</option>
-                            </select>
-                        </div>
-                        <div class="config-option">
-                            <label>🔤 Tamanho da fonte</label>
-                            <select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)">
-                                <option value="small" ${userData.fontSize === 'small' ? 'selected' : ''}>Pequeno</option>
-                                <option value="medium" ${userData.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option>
-                                <option value="large" ${userData.fontSize === 'large' ? 'selected' : ''}>Grande</option>
-                            </select>
-                        </div>
-                        <div class="config-option">
-                            <label>✨ Animações</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="animations-toggle" ${userData.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="config-option">
-                            <label>💫 Efeito de brilho nos botões</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="glow-toggle" ${userData.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="config-option">
-                            <label>📦 Modo compacto (cards menores)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="compact-toggle" ${userData.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
+                        <div class="config-option"><label>🎨 Tema</label><select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)"><option value="dark" ${userData.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option><option value="light" ${userData.theme === 'light' ? 'selected' : ''}>☀️ Claro</option><option value="neon" ${userData.theme === 'neon' ? 'selected' : ''}>💚 Neon</option></select></div>
+                        <div class="config-option"><label>🔤 Tamanho da fonte</label><select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)"><option value="small" ${userData.fontSize === 'small' ? 'selected' : ''}>Pequeno</option><option value="medium" ${userData.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option><option value="large" ${userData.fontSize === 'large' ? 'selected' : ''}>Grande</option></select></div>
+                        <div class="config-option"><label>✨ Animações</label><label class="toggle-switch"><input type="checkbox" id="animations-toggle" ${userData.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)"><span class="toggle-slider"></span></label></div>
+                        <div class="config-option"><label>💫 Efeito de brilho nos botões</label><label class="toggle-switch"><input type="checkbox" id="glow-toggle" ${userData.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)"><span class="toggle-slider"></span></label></div>
+                        <div class="config-option"><label>📦 Modo compacto (cards menores)</label><label class="toggle-switch"><input type="checkbox" id="compact-toggle" ${userData.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)"><span class="toggle-slider"></span></label></div>
                     </div>
                 </div>
-                <div class="card"><h3>⚙️ Personalização de Cartões</h3>
-                    <input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${userData.card1Name}">
-                    <input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${userData.card2Name}">
-                    <button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button>
-                    <small style="display:block; margin-top:8px; color:var(--text-secondary);">✏️ Edite os nomes e clique em "Salvar" para confirmar</small>
-                </div>
-                <div class="card"><h3>🏷️ Categorias Personalizadas</h3>
-                    <div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:var(--accent-primary); width:auto;">Escolher ícone</button></div>
-                    <div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div>
-                    <div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:var(--text-secondary);">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div>
-                </div>
-                <div class="card"><h3>📝 Frase de impacto</h3>
-                    <input type="text" id="quote-input" value="${userData.quote || ''}" onblur="saveQuote()">
-                    <small style="display:block; margin-top:6px; color:var(--text-secondary);">Clique fora do campo para salvar</small>
-                </div>
-                <div class="card">
-                    <button id="logoutButton" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair da conta</button>
-                </div>
+                <div class="card"><h3>⚙️ Personalização de Cartões</h3><input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${userData.card1Name}"><input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${userData.card2Name}"><button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button><small style="display:block; margin-top:8px; color:var(--text-secondary);">✏️ Edite os nomes e clique em "Salvar" para confirmar</small></div>
+                <div class="card"><h3>🏷️ Categorias Personalizadas</h3><div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:var(--accent-primary); width:auto;">Escolher ícone</button></div><div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div><div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:var(--text-secondary);">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div></div>
+                <div class="card"><h3>📝 Frase de impacto</h3><input type="text" id="quote-input" value="${userData.quote || ''}" onblur="saveQuote()"><small style="display:block; margin-top:6px; color:var(--text-secondary);">Clique fora do campo para salvar</small></div>
+                <div class="card"><button id="logoutButton" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair da conta</button></div>
             `;
             document.getElementById('config-content').innerHTML = html;
         }
         
         // ==================== DIAMOND/VISÃO ====================
         const POSITIVE_ACTIONS = [
-            "✅ Aumentei meus aportes mensais em 5%",
-            "📊 Revisei meus investimentos e diversifiquei a carteira",
-            "💰 Mantenho reserva de emergência de 6 meses",
-            "📚 Investi em educação financeira (livros/cursos)",
-            "🎯 Defini metas claras para os próximos 12 meses",
-            "🔄 Automatizei meus investimentos mensais",
-            "📈 Acompanhei meus indicadores financeiros"
+            "✅ Aumentei meus aportes mensais em 5%", "📊 Revisei meus investimentos e diversifiquei a carteira",
+            "💰 Mantenho reserva de emergência de 6 meses", "📚 Investi em educação financeira (livros/cursos)",
+            "🎯 Defini metas claras para os próximos 12 meses", "🔄 Automatizei meus investimentos mensais", "📈 Acompanhei meus indicadores financeiros"
         ];
-        
         const NEGATIVE_ACTIONS = [
-            "📝 Listei todas as minhas dívidas com juros",
-            "✂️ Cortei despesas não essenciais do mês",
-            "🤝 Negociei prazos e juros com credores",
-            "💪 Quitei a dívida mais cara (método avalanche)",
-            "📊 Criei um orçamento realista de recuperação",
-            "🚀 Busquei fontes extras de renda",
-            "🧠 Estudei sobre educação financeira para recomeçar"
+            "📝 Listei todas as minhas dívidas com juros", "✂️ Cortei despesas não essenciais do mês",
+            "🤝 Negociei prazos e juros com credores", "💪 Quitei a dívida mais cara (método avalanche)",
+            "📊 Criei um orçamento realista de recuperação", "🚀 Busquei fontes extras de renda", "🧠 Estudei sobre educação financeira para recomeçar"
         ];
         
         function toggleAction(key, index, isPositive) {
@@ -2392,17 +2409,12 @@
             <div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div>
             <div class="progress-text">${completed} de ${total} ações concluídas</div>
             <div class="action-list">`;
-            
             actions.forEach((action, idx) => {
                 const isCompleted = userData.actionProgress[isPositive ? 'positive' : 'negative'][key]?.includes(idx) || false;
-                html += `<div class="action-item ${isCompleted ? 'completed' : ''}" onclick="toggleAction('${key}', ${idx}, ${isPositive})">
-                            <input type="checkbox" ${isCompleted ? 'checked' : ''} onclick="event.stopPropagation(); toggleAction('${key}', ${idx}, ${isPositive})">
-                            <span class="action-text">${action}</span>
-                        </div>`;
+                html += `<div class="action-item ${isCompleted ? 'completed' : ''}" onclick="toggleAction('${key}', ${idx}, ${isPositive})"><input type="checkbox" ${isCompleted ? 'checked' : ''} onclick="event.stopPropagation(); toggleAction('${key}', ${idx}, ${isPositive})"><span class="action-text">${action}</span></div>`;
             });
             html += `</div>`;
             document.getElementById('dynamic-tips-card').innerHTML = html;
-            
             const navVision = document.getElementById('nav-vision');
             if (navVision) navVision.innerHTML = isPositive ? '<i class="fas fa-gem"></i>Visão' : '<i class="fas fa-life-ring"></i>Recuperação';
         }
@@ -2428,7 +2440,6 @@
             if(tabId === 'tab-metas') renderMetas();
         }
         
-        // Preview da imagem
         document.addEventListener('DOMContentLoaded', function() {
             let imageInput = document.getElementById('new-goal-image-input');
             if (imageInput) {
@@ -2446,7 +2457,6 @@
             }
         });
         
-        // Exportar funções globais
         window.switchTab = switchTab;
         window.addInvestmentByType = addInvestmentByType;
         window.addTransaction = addTransaction;
