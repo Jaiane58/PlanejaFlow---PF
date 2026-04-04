@@ -3,11 +3,16 @@
 <head>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
     <title>PlanejaFlow | PF</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -18,15 +23,66 @@
             --card-bg: rgba(20, 25, 45, 0.6);
             --card-border: rgba(139, 92, 246, 0.2);
             --card-border-hover: rgba(139, 92, 246, 0.5);
-            --text-primary: #fff;
+            --text-primary: #ffffff;
             --text-secondary: #a0aec0;
             --accent-primary: #8b5cf6;
             --accent-secondary: #ec489a;
             --input-bg: rgba(15, 18, 35, 0.8);
             --input-border: rgba(139, 92, 246, 0.3);
+            --input-text: #ffffff;
             --success: #4ade80;
             --danger: #f87171;
             --warning: #fbbf24;
+            --hover-solid: #c084fc;
+            --timeline-bg: rgba(30, 25, 75, 0.4);
+            --goal-card-bg: rgba(20, 25, 45, 0.5);
+            --stat-mini-bg: rgba(20, 25, 45, 0.5);
+            --filter-chip-bg: rgba(139, 92, 246, 0.15);
+            --badge-category-bg: rgba(139, 92, 246, 0.2);
+        }
+        
+        /* TEMA CLARO */
+        body.theme-light {
+            --bg-gradient-start: #e2e8f0;
+            --bg-gradient-end: #cbd5e1;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-border-hover: #8b5cf6;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --accent-primary: #6d28d9;
+            --accent-secondary: #db2777;
+            --input-bg: #f7fafc;
+            --input-border: #e2e8f0;
+            --input-text: #1a202c;
+            --hover-solid: #6d28d9;
+            --timeline-bg: #f7fafc;
+            --goal-card-bg: #ffffff;
+            --stat-mini-bg: #f7fafc;
+            --filter-chip-bg: #e2e8f0;
+            --badge-category-bg: #e9d5ff;
+        }
+        
+        /* TEMA NEON */
+        body.theme-neon {
+            --bg-gradient-start: #0a0f1e;
+            --bg-gradient-end: #000000;
+            --card-bg: rgba(0, 0, 0, 0.8);
+            --card-border: #00ff88;
+            --card-border-hover: #00ff88;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc66;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00ff88;
+            --input-bg: #111111;
+            --input-border: #00ff88;
+            --input-text: #00ff88;
+            --hover-solid: #00ff88;
+            --timeline-bg: rgba(0, 0, 0, 0.5);
+            --goal-card-bg: rgba(0, 0, 0, 0.5);
+            --stat-mini-bg: rgba(0, 0, 0, 0.5);
+            --filter-chip-bg: rgba(0, 255, 136, 0.15);
+            --badge-category-bg: rgba(0, 255, 136, 0.2);
         }
         
         body {
@@ -35,41 +91,104 @@
             padding-bottom: 90px;
             color: var(--text-primary);
             min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-        
-        /* TEMA CLARO */
-        body.theme-light {
-            --bg-gradient-start: #e2e8f0;
-            --bg-gradient-end: #cbd5e1;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-border: rgba(100, 100, 100, 0.2);
-            --text-primary: #1a202c;
-            --text-secondary: #4a5568;
-            --input-bg: rgba(255, 255, 255, 0.9);
-            --input-border: #cbd5e1;
-        }
-        
-        /* TEMA NEON */
-        body.theme-neon {
-            --bg-gradient-start: #0a0f1e;
-            --bg-gradient-end: #000000;
-            --card-bg: rgba(0, 0, 0, 0.7);
-            --card-border: #00ff88;
-            --accent-primary: #00ff88;
-            --accent-secondary: #00ff88;
-            --input-border: #00ff88;
+            transition: background 0.3s ease;
         }
         
         body.compact .card { padding: 12px; margin-bottom: 10px; }
         body.compact .goal-card { padding: 10px; margin-bottom: 10px; }
-        
         body.no-animation * { animation: none !important; transition: none !important; }
         body.no-glow button::before { display: none; }
         body.no-glow button:hover { transform: none; box-shadow: none; }
         
         .container { max-width: 520px; margin: 0 auto; padding: 20px 18px; position: relative; z-index: 2; }
-
+        
+        /* TELA DE LOGIN */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 32px 24px;
+            border: 1px solid var(--card-border);
+            width: 100%;
+            max-width: 380px;
+        }
+        .login-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-subtitle {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+        }
+        .login-error {
+            background: rgba(248, 113, 113, 0.2);
+            border: 1px solid #f87171;
+            border-radius: 16px;
+            padding: 10px;
+            margin-bottom: 16px;
+            font-size: 0.75rem;
+            color: #f87171;
+            text-align: center;
+        }
+        .login-success {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid #4ade80;
+            border-radius: 16px;
+            padding: 10px;
+            margin-bottom: 16px;
+            font-size: 0.75rem;
+            color: #4ade80;
+            text-align: center;
+        }
+        .login-divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--card-border);
+        }
+        .login-divider::before { left: 0; }
+        .login-divider::after { right: 0; }
+        .login-divider span {
+            background: var(--card-bg);
+            padding: 0 10px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        .login-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 0.7rem;
+        }
+        .login-links span {
+            color: var(--accent-primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .hidden { display: none !important; }
+        
         .app-header, .card, .period-card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
@@ -90,6 +209,15 @@
             position: relative;
             overflow: hidden;
         }
+        body.theme-light .balance-card {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            border: 1px solid #8b5cf6;
+        }
+        body.theme-neon .balance-card {
+            background: linear-gradient(135deg, #0a0f1e, #000000);
+            border: 1px solid #00ff88;
+        }
+        
         .balance-card::before {
             content: '';
             position: absolute;
@@ -100,6 +228,7 @@
             background: radial-gradient(circle, rgba(139, 92, 246, 0.3), transparent);
             border-radius: 50%;
         }
+        
         .avatar {
             width: 56px;
             height: 56px;
@@ -111,20 +240,32 @@
             font-weight: 800;
             font-size: 1.4rem;
             box-shadow: 0 8px 20px rgba(139, 92, 246, 0.5);
-            animation: pulseGlow 2s infinite;
+            color: white;
         }
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
-        }
+        
         .user-info h2 {
             font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
-            background: linear-gradient(135deg, #fff, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background: transparent;
+            color: var(--text-primary);
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 40px;
+            transition: all 0.2s;
         }
+        .user-info h2:hover {
+            background: var(--hover-solid);
+            color: white;
+        }
+        
+        .user-info .question-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: block;
+        }
+        
         .main-amount {
             font-size: 2rem;
             font-weight: 800;
@@ -133,6 +274,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+        
         input, select {
             width: 100%;
             padding: 14px 16px;
@@ -140,11 +282,12 @@
             border-radius: 20px;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
-            color: var(--text-primary);
+            color: var(--input-text);
             font-size: 0.9rem;
             outline: none;
         }
         input:focus, select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+        input::placeholder { color: var(--text-secondary); opacity: 0.7; }
         
         .field-label {
             font-size: 0.7rem;
@@ -196,7 +339,6 @@
             color: var(--accent-primary);
             margin-top: 8px;
         }
-        .btn-secondary:hover { background: rgba(139, 92, 246, 0.4); }
         
         .nav-bar {
             position: fixed;
@@ -212,6 +354,14 @@
             border-top: 1px solid rgba(139, 92, 246, 0.3);
             z-index: 1000;
         }
+        body.theme-light .nav-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid #6d28d9;
+        }
+        body.theme-neon .nav-bar {
+            border-top: 1px solid #00ff88;
+        }
+        
         .nav-item {
             text-align: center;
             font-size: 0.6rem;
@@ -222,44 +372,44 @@
             transition: all 0.2s;
         }
         .nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
-        .nav-item.active { color: #c084fc; text-shadow: 0 0 10px rgba(192, 132, 252, 0.5); }
+        .nav-item.active { color: var(--accent-primary); text-shadow: 0 0 10px rgba(192, 132, 252, 0.5); }
+        
         .tab-content { display: none; animation: fadeUp 0.4s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
+        .current-period-badge {
+            background: rgba(139, 92, 246, 0.15);
+            border-radius: 30px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-top: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
         .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; border-top: 1px solid rgba(139, 92, 246, 0.3); padding-top: 16px; }
-        .info-item { font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 500; }
-        .info-item b { font-size: 1rem; display: block; margin-top: 4px; font-weight: 700; color: #c084fc; }
+        .info-item { font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 500; color: var(--text-secondary); }
+        .info-item b { font-size: 1rem; display: block; margin-top: 4px; font-weight: 700; color: var(--accent-primary); }
         
         .timeline-container { position: relative; padding-left: 30px; }
         .timeline-container::before { content: ''; position: absolute; left: 15px; top: 10px; bottom: 10px; width: 2px; background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary)); border-radius: 2px; }
         .timeline-item { position: relative; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 16px; }
-        .timeline-icon { position: absolute; left: -30px; top: 0; width: 36px; height: 36px; background: rgba(20, 25, 45, 0.9); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 1px solid rgba(139, 92, 246, 0.4); z-index: 1; }
+        .timeline-icon { position: absolute; left: -30px; top: 0; width: 36px; height: 36px; background: var(--card-bg); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 1px solid rgba(139, 92, 246, 0.4); z-index: 1; }
         .timeline-icon.income { background: rgba(74, 222, 128, 0.2); color: var(--success); border-color: var(--success); }
         .timeline-icon.expense { background: rgba(248, 113, 113, 0.2); color: var(--danger); border-color: var(--danger); }
-        .timeline-content { flex: 1; background: rgba(30, 25, 75, 0.4); border-radius: 20px; padding: 12px 16px; transition: all 0.2s; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .timeline-content:hover { background: rgba(139, 92, 246, 0.15); transform: translateX(4px); border-color: rgba(139, 92, 246, 0.5); }
-        .timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
-        .timeline-desc { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
-        .timeline-value { font-weight: 800; font-size: 0.9rem; }
-        .timeline-value.income { color: var(--success); }
-        .timeline-value.expense { color: var(--danger); }
-        .timeline-details { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-        .timeline-category { font-size: 0.65rem; background: rgba(255,255,255,0.05); padding: 3px 10px; border-radius: 30px; display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); }
-        .timeline-method { font-size: 0.65rem; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.03); padding: 3px 10px; border-radius: 30px; }
-        .timeline-date { font-size: 0.6rem; color: #7e8b9c; display: inline-flex; align-items: center; gap: 4px; }
-        .empty-timeline { text-align: center; padding: 40px 20px; color: #7e8b9c; background: rgba(255,255,255,0.02); border-radius: 24px; }
+        .timeline-content { flex: 1; background: var(--timeline-bg); border-radius: 20px; padding: 12px 16px; transition: all 0.2s; border: 1px solid var(--card-border); }
+        .empty-timeline { text-align: center; padding: 40px 20px; color: var(--text-secondary); background: var(--timeline-bg); border-radius: 24px; }
         
         .investment-tab-bar { display: flex; gap: 8px; margin-bottom: 20px; background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 40px; border: 1px solid rgba(139, 92, 246, 0.3); }
-        .inv-tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 32px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: #a0aec0; transition: all 0.2s; }
-        .inv-tab.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
+        .inv-tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 32px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
+        .inv-tab.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; }
         .inv-panel { display: none; }
         .inv-panel.active { display: block; }
-        .investment-option-card { background: rgba(20, 25, 45, 0.5); border-radius: 20px; padding: 14px; margin-bottom: 12px; border: 1px solid rgba(139, 92, 246, 0.2); cursor: pointer; transition: all 0.2s; }
-        .investment-option-card:hover { background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.5); }
+        
+        .investment-option-card { background: var(--goal-card-bg); border-radius: 20px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--card-border); cursor: pointer; }
         .investment-option-card .title { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
         .investment-option-card .desc { font-size: 0.7rem; color: var(--text-secondary); }
-        .empty-state { text-align: center; padding: 40px 20px; color: #7e8b9c; background: rgba(255,255,255,0.02); border-radius: 24px; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); background: var(--timeline-bg); border-radius: 24px; }
         
         .chart-container { position: relative; width: 100%; max-width: 280px; margin: 0 auto 20px auto; }
         canvas#portfolioChart { max-height: 250px; width: 100%; }
@@ -267,43 +417,36 @@
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-secondary); }
         .legend-color { width: 12px; height: 12px; border-radius: 50%; }
         
-        /* ESTILOS DA ABA DE METAS - COM ESPAÇAMENTO CORRIGIDO */
         .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-        .filter-chip { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 30px; padding: 8px 16px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); }
-        .filter-chip.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border-color: transparent; color: white; }
-        .filter-chip:hover { background: rgba(139, 92, 246, 0.3); }
+        .filter-chip { background: var(--filter-chip-bg); border: 1px solid var(--card-border); border-radius: 30px; padding: 8px 16px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--text-secondary); }
+        .filter-chip.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; border-color: transparent; }
         
         .stats-mini-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-mini { background: rgba(20, 25, 45, 0.5); border-radius: 16px; padding: 12px 8px; text-align: center; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .stat-mini .value { font-size: 1.2rem; font-weight: 800; color: #c084fc; }
+        .stat-mini { background: var(--stat-mini-bg); border-radius: 16px; padding: 12px 8px; text-align: center; border: 1px solid var(--card-border); }
+        .stat-mini .value { font-size: 1.2rem; font-weight: 800; color: var(--accent-primary); }
         .stat-mini .label { font-size: 0.6rem; color: var(--text-secondary); margin-top: 4px; }
         
-        .goal-card { background: rgba(20, 25, 45, 0.5); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.2); transition: all 0.3s; }
-        .goal-card:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.1); }
-        
+        .goal-card { background: var(--goal-card-bg); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--card-border); }
         .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
         .goal-title { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
-        .goal-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 20px; background: rgba(139, 92, 246, 0.2); color: #c084fc; }
-        
-        .goal-image { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; background: rgba(139, 92, 246, 0.2); cursor: pointer; transition: all 0.2s; }
-        .goal-image:hover { transform: scale(1.05); border: 2px solid var(--accent-primary); }
+        .goal-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 20px; background: var(--badge-category-bg); color: var(--accent-primary); }
+        .goal-image { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; background: rgba(139, 92, 246, 0.2); cursor: pointer; }
         
         .progress-container { margin: 12px 0; }
-        .progress-bar-custom { background: rgba(255,255,255,0.1); border-radius: 20px; height: 12px; overflow: hidden; }
+        .progress-bar-custom { background: rgba(139, 92, 246, 0.2); border-radius: 20px; height: 12px; overflow: hidden; }
         .progress-fill-custom { background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); height: 100%; border-radius: 20px; transition: width 0.6s ease; }
         .progress-stats { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--text-secondary); }
         
-        .milestones { display: flex; justify-content: space-between; margin: 12px 0; padding: 8px 0; border-top: 1px solid rgba(139, 92, 246, 0.2); border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
-        .milestone { text-align: center; font-size: 0.6rem; color: #7e8b9c; }
+        .milestones { display: flex; justify-content: space-between; margin: 12px 0; padding: 8px 0; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+        .milestone { text-align: center; font-size: 0.6rem; color: var(--text-secondary); }
         .milestone.reached { color: var(--success); }
-        .milestone.current { color: #c084fc; font-weight: 700; }
         
         .goal-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 16px 0; }
-        .goal-info-item { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px 8px; text-align: center; }
+        .goal-info-item { background: var(--timeline-bg); border-radius: 12px; padding: 10px 8px; text-align: center; border: 1px solid var(--card-border); }
         .goal-info-item .label { font-size: 0.6rem; color: var(--text-secondary); }
-        .goal-info-item .value { font-size: 0.85rem; font-weight: 700; color: #c084fc; }
+        .goal-info-item .value { font-size: 0.85rem; font-weight: 700; color: var(--accent-primary); }
         
-        .suggestion-box { background: rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 10px; margin: 12px 0; font-size: 0.7rem; border-left: 3px solid var(--accent-primary); color: var(--text-secondary); }
+        .suggestion-box { background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 10px; margin: 12px 0; font-size: 0.7rem; border-left: 3px solid var(--accent-primary); color: var(--text-secondary); }
         .achievements { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
         .achievement { font-size: 0.6rem; padding: 4px 8px; border-radius: 20px; background: rgba(74, 222, 128, 0.2); color: var(--success); }
         
@@ -312,21 +455,17 @@
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 90%; }
-        .modal-content img { width: 100%; height: auto; border-radius: 20px; }
         .modal-close { position: absolute; top: 20px; right: 30px; font-size: 2rem; cursor: pointer; color: white; }
         
-        .notifications-area { background: rgba(139, 92, 246, 0.1); border-radius: 16px; padding: 12px; margin-bottom: 16px; border: 1px solid rgba(139, 92, 246, 0.2); }
-        .notification { font-size: 0.7rem; padding: 8px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.1); display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
-        .notification:last-child { border-bottom: none; }
-        .notification-icon { width: 24px; text-align: center; }
+        .notifications-area { background: rgba(139, 92, 246, 0.1); border-radius: 16px; padding: 12px; margin-bottom: 16px; border: 1px solid var(--card-border); }
+        .notification { font-size: 0.7rem; padding: 8px 0; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
         
         .distribution-chart { max-width: 200px; margin: 0 auto; }
         
-        /* CONFIGURAÇÕES ESTILIZADAS */
         .config-section { margin-bottom: 24px; }
-        .config-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
+        .config-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
         .config-option label { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
-        .config-select { width: auto; padding: 8px 12px; margin: 0; font-size: 0.8rem; }
+        .config-select { width: auto; padding: 8px 12px; margin: 0; font-size: 0.8rem; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 12px; }
         .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 24px; }
@@ -336,865 +475,1147 @@
         
         .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
         .period-selector-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .period-confirm-btn { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
-        .current-period-badge { background: rgba(139, 92, 246, 0.15); border-radius: 30px; padding: 8px 16px; text-align: center; margin-top: 12px; border: 1px solid rgba(139, 92, 246, 0.3); }
         .quote-text { font-size: 0.7rem; color: var(--text-secondary); font-weight: 500; margin-top: 10px; background: rgba(139, 92, 246, 0.1); padding: 8px 14px; border-radius: 20px; line-height: 1.4; }
-        .cat-icon { width: 44px; height: 44px; background: rgba(139, 92, 246, 0.2); border-radius: 18px; display: flex; align-items: center; justify-content: center; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.2); }
-        .badge-category { font-size: 0.7rem; font-weight: 500; background: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 30px; display: inline-block; color: #c084fc; }
+        .cat-icon { width: 44px; height: 44px; background: var(--badge-category-bg); border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--card-border); }
+        .badge-category { font-size: 0.7rem; font-weight: 500; background: var(--badge-category-bg); padding: 2px 8px; border-radius: 30px; display: inline-block; color: var(--accent-primary); }
         .debt-info { font-size: 0.7rem; margin-top: 4px; opacity: 0.8; color: var(--danger); }
         .icon-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 10px; border-radius: 24px; }
-        .icon-option { width: 42px; height: 42px; background: rgba(20, 25, 45, 0.8); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; border: 1px solid rgba(139, 92, 246, 0.3); transition: all 0.2s; }
+        .icon-option { width: 42px; height: 42px; background: var(--goal-card-bg); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; border: 1px solid var(--card-border); }
         .icon-option.selected { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; }
-        .category-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.2); color: var(--text-primary); }
+        .category-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--card-border); color: var(--text-primary); }
         .action-list { margin-top: 16px; }
-        .action-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(139, 92, 246, 0.2); cursor: pointer; color: var(--text-primary); }
+        .action-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--card-border); cursor: pointer; color: var(--text-primary); }
         .action-item input[type="checkbox"] { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--accent-primary); }
-        .action-item.completed .action-text { text-decoration: line-through; color: #7e8b9c; }
-        h3 { font-size: 0.75rem; letter-spacing: 0.8px; font-weight: 700; text-transform: uppercase; color: #c084fc; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; border-left: 3px solid var(--accent-primary); padding-left: 12px; }
+        .action-item.completed .action-text { text-decoration: line-through; color: var(--text-secondary); }
+        h3 { font-size: 0.75rem; letter-spacing: 0.8px; font-weight: 700; text-transform: uppercase; color: var(--accent-primary); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; border-left: 3px solid var(--accent-primary); padding-left: 12px; }
         
         .image-upload-preview { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
         .image-preview { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; background: rgba(139, 92, 246, 0.2); }
-        .upload-btn { background: rgba(139, 92, 246, 0.2); color: #c084fc; width: auto; padding: 8px 12px; font-size: 0.7rem; }
+        .upload-btn { background: rgba(139, 92, 246, 0.2); color: var(--accent-primary); width: auto; padding: 8px 12px; font-size: 0.7rem; }
         
-        .font-small body { font-size: 12px; }
-        .font-large body { font-size: 18px; }
+        .investment-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+        .investment-list-item .name { font-size: 0.85rem; color: var(--text-primary); }
+        .investment-list-item .value { font-weight: 700; color: var(--accent-primary); }
+        .section-title { font-weight: 700; font-size: 0.8rem; margin: 16px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent-primary); color: var(--accent-primary); }
+        
+        .logout-btn {
+            background: rgba(220, 38, 38, 0.2);
+            color: #f87171;
+            margin-top: 16px;
+        }
+        .logout-btn:hover {
+            background: rgba(220, 38, 38, 0.4);
+            color: white;
+        }
+        
+        .user-email {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div id="tab-home" class="tab-content active"></div>
-    <div id="tab-diamond" class="tab-content"><div id="dynamic-tips-card" class="card"></div></div>
-    <div id="tab-extrato" class="tab-content"><div id="extrato-content"></div></div>
-    <div id="tab-invest" class="tab-content"><div id="invest-content"></div></div>
-    <div id="tab-metas" class="tab-content"><div id="metas-content"></div></div>
-    <div id="tab-config" class="tab-content"><div id="config-content"></div></div>
-</div>
-
-<!-- Modal para visualizar foto -->
-<div id="imageModal" class="modal" onclick="closeModal()">
-    <span class="modal-close">&times;</span>
-    <div class="modal-content">
-        <img id="modalImage" src="" alt="Foto do sonho">
-    </div>
-</div>
-
-<nav class="nav-bar">
-    <div class="nav-item active" onclick="switchTab('tab-home')"><i class="fas fa-home"></i>Início</div>
-    <div class="nav-item" id="nav-vision" onclick="switchTab('tab-diamond')"><i class="fas fa-gem"></i>Visão</div>
-    <div class="nav-item" onclick="switchTab('tab-extrato')"><i class="fas fa-receipt"></i>Extrato</div>
-    <div class="nav-item" onclick="switchTab('tab-invest')"><i class="fas fa-chart-line"></i>Investir</div>
-    <div class="nav-item" onclick="switchTab('tab-metas')"><i class="fas fa-flag-checkered"></i>Metas</div>
-    <div class="nav-item" onclick="switchTab('tab-config')"><i class="fas fa-sliders-h"></i>Ajustes</div>
-</nav>
-
-<script>
-    let db = JSON.parse(localStorage.getItem('planejaflow_v4')) || {
-        name: null, quote: "📊 Planeje o fluxo, colha os resultados",
-        card1Name: "Visa Platinum", card2Name: "Mastercard Black",
-        customCategories: [], months: {}, actionProgress: { positive: {}, negative: {} },
-        theme: "dark", fontSize: "medium", animations: true, glowEffect: true, compactMode: false
-    };
-    if (!db.months) db.months = {};
-    if (!db.customCategories) db.customCategories = [];
-    if (!db.actionProgress) db.actionProgress = { positive: {}, negative: {} };
-    if (db.theme === undefined) db.theme = "dark";
-    if (db.fontSize === undefined) db.fontSize = "medium";
-    if (db.animations === undefined) db.animations = true;
-    if (db.glowEffect === undefined) db.glowEffect = true;
-    if (db.compactMode === undefined) db.compactMode = false;
-
-    let currentYear = 2025, currentMonth = 3;
-    let selectedYear = 2025, selectedMonth = 3;
-    let currentInvTab = "renda-fixa";
-    let portfolioChart = null;
-    let currentGoalFilter = "all";
-    let goalsDistributionChart = null;
-
-    // APLICAR CONFIGURAÇÕES DE ESTILO
-    function applyStyleSettings() {
-        document.body.classList.remove('theme-light', 'theme-neon', 'compact', 'no-animation', 'no-glow');
-        if (db.theme === 'light') document.body.classList.add('theme-light');
-        if (db.theme === 'neon') document.body.classList.add('theme-neon');
-        if (db.compactMode) document.body.classList.add('compact');
-        if (!db.animations) document.body.classList.add('no-animation');
-        if (!db.glowEffect) document.body.classList.add('no-glow');
-        
-        let fontSize = db.fontSize || 'medium';
-        if (fontSize === 'small') document.body.style.fontSize = '12px';
-        else if (fontSize === 'large') document.body.style.fontSize = '18px';
-        else document.body.style.fontSize = '';
-    }
-
-    function saveStyleSetting(key, value) { db[key] = value; saveGlobal(); applyStyleSettings(); }
-
-    const BASE_CATEGORIES = [
-        { name: "💼 Salário", icon: "fas fa-briefcase" }, { name: "🚀 Renda Extra", icon: "fas fa-rocket" },
-        { name: "📈 Dividendos", icon: "fas fa-chart-simple" }, { name: "🛒 Mercado", icon: "fas fa-cart-shopping" },
-        { name: "🍽️ Restaurante", icon: "fas fa-utensils" }, { name: "🏠 Moradia", icon: "fas fa-home" },
-        { name: "⚡ Contas", icon: "fas fa-bolt" }, { name: "🚗 Transporte", icon: "fas fa-car" },
-        { name: "🎓 Educação", icon: "fas fa-graduation-cap" }, { name: "❤️ Saúde", icon: "fas fa-heartbeat" },
-        { name: "🎉 Lazer", icon: "fas fa-plane" }, { name: "🏦 Investimentos", icon: "fas fa-chart-line" }
-    ];
-
-    const POSITIVE_ACTIONS = [
-        "✅ Aumentei meus aportes mensais em 5%",
-        "📊 Revisei meus investimentos e diversifiquei a carteira",
-        "💰 Mantenho reserva de emergência de 6 meses",
-        "📚 Investi em educação financeira (livros/cursos)",
-        "🎯 Defini metas claras para os próximos 12 meses",
-        "🔄 Automatizei meus investimentos mensais",
-        "📈 Acompanhei meus indicadores financeiros"
-    ];
-
-    const NEGATIVE_ACTIONS = [
-        "📝 Listei todas as minhas dívidas com juros",
-        "✂️ Cortei despesas não essenciais do mês",
-        "🤝 Negociei prazos e juros com credores",
-        "💪 Quitei a dívida mais cara (método avalanche)",
-        "📊 Criei um orçamento realista de recuperação",
-        "🚀 Busquei fontes extras de renda",
-        "🧠 Estudei sobre educação financeira para recomeçar"
-    ];
-
-    const RENDA_FIXA_OPCOES = [
-        { name: "CDB / RDB", desc: "Certificado de Depósito Bancário", icon: "fas fa-building-columns" },
-        { name: "Tesouro Direto", desc: "Títulos públicos federais", icon: "fas fa-landmark" },
-        { name: "LCI / LCA", desc: "Letras de Crédito (isento IR)", icon: "fas fa-chart-line" }
-    ];
-    const RENDA_VARIAVEL_OPCOES = [
-        { name: "Ações (B3)", desc: "Participação em empresas", icon: "fas fa-chart-simple" },
-        { name: "Fundos Imobiliários (FIIs)", desc: "Investimento em imóveis", icon: "fas fa-building" },
-        { name: "ETFs", desc: "Fundos de índice", icon: "fas fa-chart-line" }
-    ];
-    const CRIPTO_OPCOES = [
-        { name: "Bitcoin (BTC)", desc: "A criptomoeda original", icon: "fab fa-bitcoin" },
-        { name: "Ethereum (ETH)", desc: "Plataforma de contratos inteligentes", icon: "fab fa-ethereum" },
-        { name: "Solana (SOL)", desc: "Blockchain de alta performance", icon: "fas fa-chart-line" },
-        { name: "BNB", desc: "Moeda da Binance Smart Chain", icon: "fas fa-coins" }
-    ];
-
-    function getMonthKey() { return `${currentYear}-${currentMonth}`; }
-    function getMonthData() { let key = getMonthKey(); if (!db.months[key]) db.months[key] = { transactions: [], investments: [], goals: [] }; return db.months[key]; }
-    function saveGlobal() { localStorage.setItem('planejaflow_v4', JSON.stringify(db)); renderAll(); applyStyleSettings(); }
-    
-    function getAllCategories() { return [...BASE_CATEGORIES, ...(db.customCategories || [])]; }
-    function getCategoryIcon(categoryName) {
-        const allCats = getAllCategories();
-        const found = allCats.find(c => c.name === categoryName);
-        return found ? found.icon : "fas fa-receipt";
-    }
-
-    function confirmPeriod() { currentYear = selectedYear; currentMonth = selectedMonth; renderAll(); }
-    function askUserName() { let n = prompt("Como gostaria de ser chamado?", db.name || "Planejador"); if(n?.trim()) { db.name = n.trim(); saveGlobal(); } }
-    function saveQuote() { let q = document.getElementById('quote-input')?.value; if(q) db.quote = q; saveGlobal(); }
-    
-    function saveCards() { 
-        const c1 = document.getElementById('c1-n')?.value.trim(); 
-        const c2 = document.getElementById('c2-n')?.value.trim();
-        if(c1) db.card1Name = c1;
-        if(c2) db.card2Name = c2;
-        saveGlobal();
-        alert("✅ Nomes dos cartões salvos com sucesso!");
-    }
-    
-    function addTransaction() {
-        let val = parseFloat(document.getElementById('t-val')?.value);
-        let desc = document.getElementById('t-desc')?.value.trim();
-        let cat = document.getElementById('t-cat')?.value;
-        let method = document.getElementById('t-method')?.value;
-        let type = document.getElementById('t-type')?.value;
-        if(isNaN(val) || val<=0 || !desc) return alert("Preencha todos os campos");
-        let monthData = getMonthData();
-        monthData.transactions.unshift({ id: Date.now(), value: val, description: desc, category: cat, method, type, date: new Date().toLocaleDateString() });
-        saveGlobal();
-    }
-
-    function deleteItem(collection, id) { let monthData = getMonthData(); monthData[collection] = monthData[collection].filter(i=>i.id!==id); saveGlobal(); }
-
-    function addInvestmentByType(type) {
-        let nome, valor;
-        if(type === "Renda Fixa") { nome = document.getElementById('i-nome-fixa')?.value; valor = parseFloat(document.getElementById('i-val-fixa')?.value); }
-        else if(type === "Renda Variável") { nome = document.getElementById('i-nome-variavel')?.value; valor = parseFloat(document.getElementById('i-val-variavel')?.value); }
-        else if(type === "Criptomoedas") { nome = document.getElementById('i-nome-cripto')?.value; valor = parseFloat(document.getElementById('i-val-cripto')?.value); }
-        else { return; }
-        if(!nome || isNaN(valor) || valor<=0) return alert("Preencha nome e valor do ativo");
-        let monthData = getMonthData();
-        monthData.investments.push({ id: Date.now(), name: nome, amount: valor, assetType: type });
-        saveGlobal();
-    }
-
-    function toggleAction(key, index, isPositive) {
-        const category = isPositive ? 'positive' : 'negative';
-        if (!db.actionProgress[category][key]) db.actionProgress[category][key] = [];
-        const idx = db.actionProgress[category][key].indexOf(index);
-        if (idx === -1) db.actionProgress[category][key].push(index);
-        else db.actionProgress[category][key].splice(idx, 1);
-        saveGlobal();
-    }
-
-    function getProgress(key, isPositive) {
-        const category = isPositive ? 'positive' : 'negative';
-        const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
-        const completed = db.actionProgress[category][key] || [];
-        return { completed: completed.length, total: actions.length };
-    }
-
-    function getMonthDisplay() { const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return `${months[currentMonth]} ${currentYear}`; }
-
-    function getInvestmentsByType() {
-        let monthData = getMonthData();
-        let investments = monthData.investments || [];
-        let fixa = investments.filter(i => i.assetType === "Renda Fixa").reduce((s,i) => s + i.amount, 0);
-        let variavel = investments.filter(i => i.assetType === "Renda Variável").reduce((s,i) => s + i.amount, 0);
-        let cripto = investments.filter(i => i.assetType === "Criptomoedas").reduce((s,i) => s + i.amount, 0);
-        return { fixa, variavel, cripto };
-    }
-
-    function updatePortfolioChart() {
-        const { fixa, variavel, cripto } = getInvestmentsByType();
-        const ctx = document.getElementById('portfolioChart')?.getContext('2d');
-        if (!ctx) return;
-        if (portfolioChart) portfolioChart.destroy();
-        portfolioChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels: ['Renda Fixa', 'Renda Variável', 'Criptomoedas'], datasets: [{ data: [fixa, variavel, cripto], backgroundColor: ['#8b5cf6', '#ec489a', '#f59e0b'], borderWidth: 0, hoverOffset: 10 }] },
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let total = fixa + variavel + cripto; let percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0; return `${context.label}: R$ ${context.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${percentage}%)`; } } } }, cutout: '65%' }
-        });
-        let total = fixa + variavel + cripto;
-        let legendHtml = `<div class="legend-item"><div class="legend-color" style="background: #8b5cf6;"></div><span>Renda Fixa: R$ ${fixa.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((fixa/total)*100).toFixed(1) : 0}%)</span></div>
-            <div class="legend-item"><div class="legend-color" style="background: #ec489a;"></div><span>Renda Variável: R$ ${variavel.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((variavel/total)*100).toFixed(1) : 0}%)</span></div>
-            <div class="legend-item"><div class="legend-color" style="background: #f59e0b;"></div><span>Criptomoedas: R$ ${cripto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((cripto/total)*100).toFixed(1) : 0}%)</span></div>`;
-        const legendDiv = document.getElementById('chart-legend');
-        if (legendDiv) legendDiv.innerHTML = legendHtml;
-    }
-
-    function getGoalType(goal) {
-        if (goal.target <= 10000) return "short";
-        if (goal.target <= 50000) return "medium";
-        if (goal.name.toLowerCase().includes("educa") || goal.name.toLowerCase().includes("curso") || goal.name.toLowerCase().includes("faculdade")) return "education";
-        if (goal.name.toLowerCase().includes("viagem") || goal.name.toLowerCase().includes("sonho")) return "dream";
-        return "long";
-    }
-
-    function getGoalTypeLabel(type) {
-        const types = { short: "Curto Prazo", medium: "Médio Prazo", long: "Longo Prazo", education: "Educação", dream: "Sonhos" };
-        return types[type] || "Longo Prazo";
-    }
-
-    function getGoalIcon(type) {
-        const icons = { short: "⏱️", medium: "📊", long: "🏡", education: "📚", dream: "✨" };
-        return icons[type] || "🎯";
-    }
-
-    function calculateProgress(goal) {
-        let current = goal.currentAmount || 0;
-        let percent = (current / goal.target) * 100;
-        return Math.min(percent, 100);
-    }
-
-    function calculateMilestones(goal) {
-        let current = goal.currentAmount || 0;
-        let target = goal.target;
-        return { m25: current >= target * 0.25, m50: current >= target * 0.5, m75: current >= target * 0.75, m100: current >= target };
-    }
-
-    function getGoalBadge(goal) {
-        let percent = calculateProgress(goal);
-        if (percent >= 100) return { name: "🏆 CONCLUÍDA", color: "#4ade80", points: 1000 };
-        if (percent >= 75) return { name: "🥇 OURO", color: "#fbbf24", points: 500 };
-        if (percent >= 50) return { name: "🥈 PRATA", color: "#c0c0c0", points: 250 };
-        if (percent >= 25) return { name: "🥉 BRONZE", color: "#cd7f32", points: 100 };
-        return { name: "🌱 INICIANTE", color: "#8b5cf6", points: 0 };
-    }
-
-    function calculateSuggestion(goal) {
-        let current = goal.currentAmount || 0;
-        let target = goal.target;
-        let remaining = target - current;
-        let currentMonthly = goal.monthly;
-        let remainingMonths = goal.months;
-        if (remaining <= 0) return null;
-        let neededMonthly = remaining / remainingMonths;
-        if (currentMonthly >= neededMonthly) return null;
-        let extraNeeded = neededMonthly - currentMonthly;
-        let newMonths = Math.ceil(remaining / (currentMonthly + 500));
-        return { extraNeeded: Math.ceil(extraNeeded), newMonths, accelerator: 500 };
-    }
-
-    function getRecentAchievements(goal) {
-        let achievements = [];
-        let percent = calculateProgress(goal);
-        if (percent >= 25 && !goal._achieved25) { goal._achieved25 = true; achievements.push("🎯 25% da meta atingida!"); }
-        if (percent >= 50 && !goal._achieved50) { goal._achieved50 = true; achievements.push("🎯 50% da meta atingida!"); }
-        if (percent >= 75 && !goal._achieved75) { goal._achieved75 = true; achievements.push("🎯 75% da meta atingida!"); }
-        if (percent >= 100 && !goal._achieved100) { goal._achieved100 = true; achievements.push("🏆 META CONCLUÍDA! Parabéns!"); }
-        return achievements;
-    }
-
-    function getNotifications(goals) {
-        let notifications = [];
-        goals.forEach(goal => {
-            let percent = calculateProgress(goal);
-            if (percent >= 90 && percent < 100) notifications.push({ icon: "🎉", text: `"${goal.name}" está a ${Math.round(100-percent)}% de ser concluída!` });
-        });
-        return notifications.slice(0, 3);
-    }
-
-    function openModal(imageSrc) {
-        let modal = document.getElementById('imageModal');
-        let modalImg = document.getElementById('modalImage');
-        modal.style.display = 'flex';
-        modalImg.src = imageSrc;
-    }
-
-    function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
-
-    function triggerImageUpload(goalId) {
-        let input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = function(e) {
-            let file = e.target.files[0];
-            if (file) {
-                let reader = new FileReader();
-                reader.onload = function(event) {
-                    let monthData = getMonthData();
-                    let goal = monthData.goals.find(g => g.id == goalId);
-                    if (goal) { goal.image = event.target.result; saveGlobal(); renderMetas(); }
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-        input.click();
-    }
-
-    function updateGoalAmount(goalId, newAmount) {
-        if (!newAmount || newAmount <= 0) {
-            newAmount = parseFloat(prompt("💰 Quanto você quer adicionar a esta meta? (R$)", "100"));
-            if (isNaN(newAmount) || newAmount <= 0) return alert("Valor inválido!");
-        }
-        let monthData = getMonthData();
-        let goal = monthData.goals.find(g => g.id == goalId);
-        if (goal) { 
-            goal.currentAmount = (goal.currentAmount || 0) + newAmount; 
-            saveGlobal(); 
-            renderMetas();
-            alert(`✅ R$ ${newAmount.toFixed(2)} adicionado à meta "${goal.name}"!`);
-        }
-    }
-
-    function renderMetas() {
-        let monthData = getMonthData();
-        let goals = monthData.goals || [];
-        let totalGoals = goals.length;
-        let totalTarget = goals.reduce((s,g) => s + g.target, 0);
-        let totalCurrent = goals.reduce((s,g) => s + (g.currentAmount || 0), 0);
-        let avgProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
-        let totalRemaining = totalTarget - totalCurrent;
-        
-        let filteredGoals = currentGoalFilter === "all" ? goals : goals.filter(g => getGoalType(g) === currentGoalFilter);
-        
-        let notifications = getNotifications(goals);
-        
-        let typesCount = { short: 0, medium: 0, long: 0, education: 0, dream: 0 };
-        let typesValue = { short: 0, medium: 0, long: 0, education: 0, dream: 0 };
-        goals.forEach(g => { let t = getGoalType(g); typesCount[t]++; typesValue[t] += g.target; });
-        
-        let html = `
-            <div class="card">
-                <h3><i class="fas fa-flag-checkered"></i> Meu Planejador de Metas</h3>
-                
-                <div class="filter-bar">
-                    <div class="filter-chip ${currentGoalFilter === 'all' ? 'active' : ''}" onclick="setGoalFilter('all')">📊 Todas</div>
-                    <div class="filter-chip ${currentGoalFilter === 'short' ? 'active' : ''}" onclick="setGoalFilter('short')">⏱️ Curto Prazo</div>
-                    <div class="filter-chip ${currentGoalFilter === 'medium' ? 'active' : ''}" onclick="setGoalFilter('medium')">📊 Médio Prazo</div>
-                    <div class="filter-chip ${currentGoalFilter === 'long' ? 'active' : ''}" onclick="setGoalFilter('long')">🏡 Longo Prazo</div>
-                    <div class="filter-chip ${currentGoalFilter === 'education' ? 'active' : ''}" onclick="setGoalFilter('education')">📚 Educação</div>
-                    <div class="filter-chip ${currentGoalFilter === 'dream' ? 'active' : ''}" onclick="setGoalFilter('dream')">✨ Sonhos</div>
+    <!-- TELA DE LOGIN -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="login-title">PlanejaFlow</div>
+            <div class="login-subtitle">Gerencie suas finanças com inteligência</div>
+            
+            <div id="loginError" class="login-error hidden"></div>
+            <div id="loginSuccess" class="login-success hidden"></div>
+            
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Seu e-mail">
+                <input type="password" id="loginPassword" placeholder="Sua senha">
+                <button id="btnLogin">Entrar</button>
+                <div class="login-links">
+                    <span onclick="showRegister()">Criar conta</span>
+                    <span onclick="showResetPassword()">Esqueci a senha</span>
                 </div>
-                
-                <div class="stats-mini-cards">
-                    <div class="stat-mini"><div class="value">${totalGoals}</div><div class="label">Metas</div></div>
-                    <div class="stat-mini"><div class="value">R$ ${(totalCurrent/1000).toFixed(0)}K</div><div class="label">Progresso</div></div>
-                    <div class="stat-mini"><div class="value">R$ ${(totalRemaining/1000).toFixed(0)}K</div><div class="label">Faltam</div></div>
-                    <div class="stat-mini"><div class="value">${Math.round(avgProgress)}%</div><div class="label">Média</div></div>
-                </div>
-                
-                ${notifications.length > 0 ? `<div class="notifications-area"><h3 style="margin-bottom:8px;">🔔 Lembretes</h3>${notifications.map(n => `<div class="notification"><span class="notification-icon">${n.icon}</span><span>${n.text}</span></div>`).join('')}</div>` : ''}
-                
-                <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                    <input type="text" id="new-goal-name" placeholder="Nome da meta (ex: Comprar Casa)" style="flex:2;">
-                    <select id="new-goal-type" style="flex:1;">
-                        <option value="short">⏱️ Curto Prazo</option>
-                        <option value="medium">📊 Médio Prazo</option>
-                        <option value="long">🏡 Longo Prazo</option>
-                        <option value="education">📚 Educação</option>
-                        <option value="dream">✨ Sonhos</option>
-                    </select>
-                </div>
-                
-                <label class="field-label">🎯 VALOR NECESSÁRIO (R$)</label>
-                <input type="number" id="new-goal-target" placeholder="Ex: 50000">
-                
-                <label class="field-label">💰 APORTE MENSAL (R$)</label>
-                <input type="number" id="new-goal-monthly" placeholder="Ex: 1000">
-                
-                <label class="field-label">💪 JÁ TENHO (R$) - Opcional</label>
-                <input type="number" id="new-goal-current" placeholder="Ex: 5000" value="0">
-                
-                <div class="image-upload-preview">
-                    <img id="new-goal-preview" class="image-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('new-goal-image-input').click()"><i class="fas fa-image"></i> Foto do sonho</button>
-                    <input type="file" id="new-goal-image-input" accept="image/*" style="display:none">
-                </div>
-                <button onclick="addGoalWithImage()"><i class="fas fa-plus-circle"></i> Criar Nova Meta</button>
+                <div class="login-divider"><span>ou</span></div>
+                <button id="btnMagicLink" class="btn-secondary">📧 Enviar link mágico</button>
             </div>
             
-            <div class="card">
-                <h3><i class="fas fa-chart-pie"></i> Distribuição das Metas</h3>
-                <div class="distribution-chart">
-                    <canvas id="goalsDistributionChart" width="180" height="180"></canvas>
+            <div id="registerForm" class="hidden">
+                <input type="email" id="registerEmail" placeholder="Seu e-mail">
+                <input type="password" id="registerPassword" placeholder="Sua senha (mínimo 6 caracteres)">
+                <button id="btnRegister">Criar conta</button>
+                <div class="login-links">
+                    <span onclick="showLogin()">Voltar para o login</span>
                 </div>
-                <div style="margin-top: 12px;">
-                    ${Object.entries(typesCount).filter(([k,v]) => v > 0).map(([k,v]) => `<div style="display:flex; justify-content:space-between; font-size:0.7rem; margin:4px 0; color: var(--text-secondary);"><span>${getGoalIcon(k)} ${getGoalTypeLabel(k)}</span><span>${v} meta(s) - R$ ${(typesValue[k]/1000).toFixed(0)}K</span></div>`).join('')}
+            </div>
+            
+            <div id="resetForm" class="hidden">
+                <input type="email" id="resetEmail" placeholder="Seu e-mail">
+                <button id="btnReset">Enviar email de recuperação</button>
+                <div class="login-links">
+                    <span onclick="showLogin()">Voltar para o login</span>
                 </div>
-            </div>`;
+            </div>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPAL (só aparece após login) -->
+    <div id="appScreen" class="hidden">
+        <div class="container">
+            <div id="tab-home" class="tab-content active"></div>
+            <div id="tab-diamond" class="tab-content"><div id="dynamic-tips-card" class="card"></div></div>
+            <div id="tab-extrato" class="tab-content"><div id="extrato-content"></div></div>
+            <div id="tab-invest" class="tab-content"><div id="invest-content"></div></div>
+            <div id="tab-metas" class="tab-content"><div id="metas-content"></div></div>
+            <div id="tab-config" class="tab-content"><div id="config-content"></div></div>
+        </div>
+
+        <nav class="nav-bar">
+            <div class="nav-item active" onclick="switchTab('tab-home')"><i class="fas fa-home"></i>Início</div>
+            <div class="nav-item" id="nav-vision" onclick="switchTab('tab-diamond')"><i class="fas fa-gem"></i>Visão</div>
+            <div class="nav-item" onclick="switchTab('tab-extrato')"><i class="fas fa-receipt"></i>Extrato</div>
+            <div class="nav-item" onclick="switchTab('tab-invest')"><i class="fas fa-chart-line"></i>Investir</div>
+            <div class="nav-item" onclick="switchTab('tab-metas')"><i class="fas fa-flag-checkered"></i>Metas</div>
+            <div class="nav-item" onclick="switchTab('tab-config')"><i class="fas fa-sliders-h"></i>Ajustes</div>
+        </nav>
+    </div>
+
+    <!-- Modal para visualizar foto -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="modal-close">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" src="" alt="Foto do sonho">
+        </div>
+    </div>
+
+    <script>
+        // ==================== FIREBASE CONFIGURAÇÃO ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEgMpqdPrMzTqdASDi_dTgCRJulpH-JiE",
+            authDomain: "planejaflow.firebaseapp.com",
+            projectId: "planejaflow",
+            storageBucket: "planejaflow.firebasestorage.app",
+            messagingSenderId: "752976520583",
+            appId: "1:752976520583:web:292a0172ba6f1a0fa19f22",
+            measurementId: "G-VMSSC0QPS7"
+        };
         
-        if (filteredGoals.length === 0) {
-            html += `<div class="empty-state">Nenhuma meta cadastrada. Clique em "Criar Nova Meta" para começar!</div>`;
-        } else {
-            filteredGoals.forEach(goal => {
-                let progress = calculateProgress(goal);
-                let milestones = calculateMilestones(goal);
-                let badge = getGoalBadge(goal);
-                let suggestion = calculateSuggestion(goal);
-                let achievements = getRecentAchievements(goal);
-                let type = getGoalType(goal);
-                let remainingMonths = goal.months;
-                let currentAmount = goal.currentAmount || 0;
-                let remaining = goal.target - currentAmount;
-                let monthlyRate = remainingMonths > 0 ? remaining / remainingMonths : 0;
-                let isOnTrack = goal.monthly >= monthlyRate;
-                
-                html += `
-                    <div class="goal-card">
-                        <div class="goal-header">
-                            <div class="goal-title">
-                                ${goal.image ? `<img src="${goal.image}" class="goal-image" onclick="openModal('${goal.image}')" style="width:50px;height:50px;">` : `<div class="goal-image" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;" onclick="triggerImageUpload(${goal.id})">${getGoalIcon(type)}</div>`}
-                                <span>${goal.name}</span>
-                            </div>
-                            <span class="goal-badge" style="background:${badge.color}20; color:${badge.color};">${badge.name} ${badge.points > 0 ? `+${badge.points}` : ''}</span>
-                        </div>
-                        
-                        <div class="progress-container">
-                            <div class="progress-bar-custom"><div class="progress-fill-custom" style="width: ${progress}%"></div></div>
-                            <div class="progress-stats"><span>R$ ${currentAmount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span><span>${progress.toFixed(1)}%</span><span>R$ ${goal.target.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>
-                        </div>
-                        
-                        <div class="milestones">
-                            <div class="milestone ${milestones.m25 ? 'reached' : ''}">🎯 25%</div>
-                            <div class="milestone ${milestones.m50 ? 'reached' : ''}">🎯 50%</div>
-                            <div class="milestone ${milestones.m75 ? 'reached' : ''}">🎯 75%</div>
-                            <div class="milestone ${milestones.m100 ? 'reached' : ''}">🏆 100%</div>
-                        </div>
-                        
-                        <div class="goal-info-grid">
-                            <div class="goal-info-item"><div class="label">📅 PREVISÃO</div><div class="value">${goal.months} meses</div></div>
-                            <div class="goal-info-item"><div class="label">💰 APORTE MENSAL</div><div class="value">R$ ${goal.monthly.toFixed(2)}</div></div>
-                            <div class="goal-info-item"><div class="label">📈 RITMO ATUAL</div><div class="value">${isOnTrack ? '✅ Dentro do prazo' : '⚠️ Atrasada'}</div></div>
-                            <div class="goal-info-item"><div class="label">💪 QUANTO FALTA</div><div class="value">R$ ${remaining.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div></div>
-                        </div>
-                        
-                        ${suggestion ? `<div class="suggestion-box">💡 <strong>Sugestão:</strong> Aumente seu aporte em R$ ${suggestion.extraNeeded}/mês ou adicione +R$ ${suggestion.accelerator}/mês para concluir em ${suggestion.newMonths} meses (antecipa ${goal.months - suggestion.newMonths} meses)</div>` : ''}
-                        
-                        ${achievements.length > 0 ? `<div class="achievements">${achievements.map(a => `<span class="achievement">${a}</span>`).join('')}</div>` : ''}
-                        
-                        <div class="goal-actions">
-                            <button onclick="updateGoalAmount(${goal.id}, 0)" style="background:rgba(74,222,128,0.2);color:#4ade80;"><i class="fas fa-plus-circle"></i> Adicionar aporte</button>
-                            <button onclick="triggerImageUpload(${goal.id})" style="background:rgba(139,92,246,0.2);color:#c084fc;"><i class="fas fa-image"></i> Trocar foto</button>
-                            <button onclick="deleteItem('goals',${goal.id})" class="btn-del"><i class="fas fa-trash"></i> Excluir</button>
-                        </div>
-                    </div>
-                `;
-            });
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        
+        // ==================== ESTADO DO APP ====================
+        let db = JSON.parse(localStorage.getItem('planejaflow_v4')) || {
+            name: null, quote: "📊 Planeje o fluxo, colha os resultados",
+            card1Name: "Visa Platinum", card2Name: "Mastercard Black",
+            customCategories: [], months: {}, actionProgress: { positive: {}, negative: {} },
+            theme: "dark", fontSize: "medium", animations: true, glowEffect: true, compactMode: false
+        };
+        
+        // Dados por usuário - cada usuário tem seu próprio storage
+        let currentUser = null;
+        
+        function loadUserData() {
+            if (!currentUser) return;
+            const userKey = `planejaflow_${currentUser.uid}`;
+            const savedData = localStorage.getItem(userKey);
+            if (savedData) {
+                db = JSON.parse(savedData);
+            } else {
+                // Reset para dados padrão para novo usuário
+                db = {
+                    name: currentUser.email ? currentUser.email.split('@')[0] : "Usuário",
+                    quote: "📊 Planeje o fluxo, colha os resultados",
+                    card1Name: "Visa Platinum", 
+                    card2Name: "Mastercard Black",
+                    customCategories: [], 
+                    months: {}, 
+                    actionProgress: { positive: {}, negative: {} },
+                    theme: "dark", 
+                    fontSize: "medium", 
+                    animations: true, 
+                    glowEffect: true, 
+                    compactMode: false
+                };
+            }
+            if (!db.months) db.months = {};
+            if (!db.customCategories) db.customCategories = [];
+            if (!db.actionProgress) db.actionProgress = { positive: {}, negative: {} };
+            saveUserData();
         }
         
-        document.getElementById('metas-content').innerHTML = html;
+        function saveUserData() {
+            if (!currentUser) return;
+            const userKey = `planejaflow_${currentUser.uid}`;
+            localStorage.setItem(userKey, JSON.stringify(db));
+        }
         
-        let ctx = document.getElementById('goalsDistributionChart')?.getContext('2d');
-        if (ctx && goals.length > 0) {
-            let distData = Object.values(typesValue).filter(v => v > 0);
-            let distLabels = Object.keys(typesValue).filter(k => typesValue[k] > 0).map(k => getGoalTypeLabel(k));
-            let distColors = ['#8b5cf6', '#ec489a', '#f59e0b', '#4ade80', '#fbbf24'];
-            if (goalsDistributionChart) goalsDistributionChart.destroy();
-            goalsDistributionChart = new Chart(ctx, {
+        function saveGlobal() { 
+            saveUserData();
+            renderAll(); 
+            applyStyleSettings(); 
+        }
+        
+        // ==================== AUTENTICAÇÃO ====================
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('loginSuccess').classList.add('hidden');
+        }
+        
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('resetForm').classList.add('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('loginSuccess').classList.add('hidden');
+        }
+        
+        function showResetPassword() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetForm').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('loginSuccess').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('loginSuccess');
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+            setTimeout(() => successDiv.classList.add('hidden'), 5000);
+        }
+        
+        // Login com email/senha
+        document.getElementById('btnLogin')?.addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) {
+                showError('Preencha e-mail e senha');
+                return;
+            }
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
+        // Criar conta
+        document.getElementById('btnRegister')?.addEventListener('click', async () => {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            if (!email || !password) {
+                showError('Preencha e-mail e senha');
+                return;
+            }
+            if (password.length < 6) {
+                showError('A senha deve ter no mínimo 6 caracteres');
+                return;
+            }
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                showSuccess('Conta criada com sucesso!');
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
+        // Recuperar senha
+        document.getElementById('btnReset')?.addEventListener('click', async () => {
+            const email = document.getElementById('resetEmail').value;
+            if (!email) {
+                showError('Digite seu e-mail');
+                return;
+            }
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
+                showLogin();
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
+        // Link mágico (login sem senha)
+        document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                showError('Digite seu e-mail primeiro');
+                return;
+            }
+            try {
+                const actionCodeSettings = {
+                    url: window.location.href,
+                    handleCodeInApp: true
+                };
+                await auth.sendSignInLinkToEmail(email, actionCodeSettings);
+                localStorage.setItem('emailForSignIn', email);
+                showSuccess('Link mágico enviado! Verifique seu e-mail.');
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
+        // Verificar link mágico
+        if (auth.isSignInWithEmailLink(window.location.href)) {
+            let email = localStorage.getItem('emailForSignIn');
+            if (!email) {
+                email = prompt('Digite seu e-mail para confirmar o login');
+            }
+            if (email) {
+                auth.signInWithEmailLink(email, window.location.href)
+                    .then(() => localStorage.removeItem('emailForSignIn'))
+                    .catch(error => showError(error.message));
+            }
+        }
+        
+        // Monitorar estado de autenticação
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                loadUserData();
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('appScreen').classList.remove('hidden');
+                renderAll();
+            } else {
+                currentUser = null;
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('appScreen').classList.add('hidden');
+                showLogin();
+            }
+        });
+        
+        // Logout
+        function logout() {
+            auth.signOut();
+        }
+        
+        // ==================== FUNÇÕES DO APP (mesmas de antes) ====================
+        let currentYear = 2025, currentMonth = 3;
+        let selectedYear = 2025, selectedMonth = 3;
+        let currentInvTab = "renda-fixa";
+        let portfolioChart = null;
+        let currentGoalFilter = "all";
+        let goalsDistributionChart = null;
+        
+        function applyStyleSettings() {
+            document.body.classList.remove('theme-light', 'theme-neon', 'compact', 'no-animation', 'no-glow');
+            if (db.theme === 'light') document.body.classList.add('theme-light');
+            if (db.theme === 'neon') document.body.classList.add('theme-neon');
+            if (db.compactMode) document.body.classList.add('compact');
+            if (!db.animations) document.body.classList.add('no-animation');
+            if (!db.glowEffect) document.body.classList.add('no-glow');
+            let fontSize = db.fontSize || 'medium';
+            if (fontSize === 'small') document.body.style.fontSize = '12px';
+            else if (fontSize === 'large') document.body.style.fontSize = '18px';
+            else document.body.style.fontSize = '';
+        }
+        
+        function saveStyleSetting(key, value) { db[key] = value; saveGlobal(); }
+        
+        const BASE_CATEGORIES = [
+            { name: "💼 Salário", icon: "fas fa-briefcase" }, { name: "🚀 Renda Extra", icon: "fas fa-rocket" },
+            { name: "📈 Dividendos", icon: "fas fa-chart-simple" }, { name: "🛒 Mercado", icon: "fas fa-cart-shopping" },
+            { name: "🍽️ Restaurante", icon: "fas fa-utensils" }, { name: "🏠 Moradia", icon: "fas fa-home" },
+            { name: "⚡ Contas", icon: "fas fa-bolt" }, { name: "🚗 Transporte", icon: "fas fa-car" },
+            { name: "🎓 Educação", icon: "fas fa-graduation-cap" }, { name: "❤️ Saúde", icon: "fas fa-heartbeat" },
+            { name: "🎉 Lazer", icon: "fas fa-plane" }, { name: "🏦 Investimentos", icon: "fas fa-chart-line" }
+        ];
+        
+        const POSITIVE_ACTIONS = [
+            "✅ Aumentei meus aportes mensais em 5%",
+            "📊 Revisei meus investimentos e diversifiquei a carteira",
+            "💰 Mantenho reserva de emergência de 6 meses",
+            "📚 Investi em educação financeira (livros/cursos)",
+            "🎯 Defini metas claras para os próximos 12 meses",
+            "🔄 Automatizei meus investimentos mensais",
+            "📈 Acompanhei meus indicadores financeiros"
+        ];
+        
+        const NEGATIVE_ACTIONS = [
+            "📝 Listei todas as minhas dívidas com juros",
+            "✂️ Cortei despesas não essenciais do mês",
+            "🤝 Negociei prazos e juros com credores",
+            "💪 Quitei a dívida mais cara (método avalanche)",
+            "📊 Criei um orçamento realista de recuperação",
+            "🚀 Busquei fontes extras de renda",
+            "🧠 Estudei sobre educação financeira para recomeçar"
+        ];
+        
+        const RENDA_FIXA_OPCOES = [
+            { name: "CDB / RDB", desc: "Certificado de Depósito Bancário", icon: "fas fa-building-columns" },
+            { name: "Tesouro Direto", desc: "Títulos públicos federais", icon: "fas fa-landmark" },
+            { name: "LCI / LCA", desc: "Letras de Crédito (isento IR)", icon: "fas fa-chart-line" }
+        ];
+        const RENDA_VARIAVEL_OPCOES = [
+            { name: "Ações (B3)", desc: "Participação em empresas", icon: "fas fa-chart-simple" },
+            { name: "Fundos Imobiliários (FIIs)", desc: "Investimento em imóveis", icon: "fas fa-building" },
+            { name: "ETFs", desc: "Fundos de índice", icon: "fas fa-chart-line" }
+        ];
+        const CRIPTO_OPCOES = [
+            { name: "Bitcoin (BTC)", desc: "A criptomoeda original", icon: "fab fa-bitcoin" },
+            { name: "Ethereum (ETH)", desc: "Plataforma de contratos inteligentes", icon: "fab fa-ethereum" },
+            { name: "Solana (SOL)", desc: "Blockchain de alta performance", icon: "fas fa-chart-line" },
+            { name: "BNB", desc: "Moeda da Binance Smart Chain", icon: "fas fa-coins" }
+        ];
+        
+        function getMonthKey() { return `${currentYear}-${currentMonth}`; }
+        function getMonthData() { let key = getMonthKey(); if (!db.months[key]) db.months[key] = { transactions: [], investments: [], goals: [] }; return db.months[key]; }
+        
+        function getAllCategories() { return [...BASE_CATEGORIES, ...(db.customCategories || [])]; }
+        function getCategoryIcon(categoryName) {
+            const allCats = getAllCategories();
+            const found = allCats.find(c => c.name === categoryName);
+            return found ? found.icon : "fas fa-receipt";
+        }
+        
+        function confirmPeriod() { currentYear = selectedYear; currentMonth = selectedMonth; renderAll(); }
+        function askUserName() { let n = prompt("Como gostaria de ser chamado?", db.name || "Planejador"); if(n?.trim()) { db.name = n.trim(); saveGlobal(); } }
+        function saveQuote() { let q = document.getElementById('quote-input')?.value; if(q) db.quote = q; saveGlobal(); }
+        
+        function saveCards() { 
+            const c1 = document.getElementById('c1-n')?.value.trim(); 
+            const c2 = document.getElementById('c2-n')?.value.trim();
+            if(c1) db.card1Name = c1;
+            if(c2) db.card2Name = c2;
+            saveGlobal();
+            alert("✅ Nomes dos cartões salvos com sucesso!");
+        }
+        
+        function addTransaction() {
+            let val = parseFloat(document.getElementById('t-val')?.value);
+            let desc = document.getElementById('t-desc')?.value.trim();
+            let cat = document.getElementById('t-cat')?.value;
+            let method = document.getElementById('t-method')?.value;
+            let type = document.getElementById('t-type')?.value;
+            if(isNaN(val) || val<=0 || !desc) return alert("Preencha todos os campos");
+            let monthData = getMonthData();
+            monthData.transactions.unshift({ id: Date.now(), value: val, description: desc, category: cat, method, type, date: new Date().toLocaleDateString() });
+            saveGlobal();
+        }
+        
+        function deleteItem(collection, id) { let monthData = getMonthData(); monthData[collection] = monthData[collection].filter(i=>i.id!==id); saveGlobal(); }
+        
+        function addInvestmentByType(type) {
+            let nome, valor;
+            if(type === "Renda Fixa") { nome = document.getElementById('i-nome-fixa')?.value; valor = parseFloat(document.getElementById('i-val-fixa')?.value); }
+            else if(type === "Renda Variável") { nome = document.getElementById('i-nome-variavel')?.value; valor = parseFloat(document.getElementById('i-val-variavel')?.value); }
+            else if(type === "Criptomoedas") { nome = document.getElementById('i-nome-cripto')?.value; valor = parseFloat(document.getElementById('i-val-cripto')?.value); }
+            else { return; }
+            if(!nome || isNaN(valor) || valor<=0) return alert("Preencha nome e valor do ativo");
+            let monthData = getMonthData();
+            monthData.investments.push({ id: Date.now(), name: nome, amount: valor, assetType: type });
+            saveGlobal();
+        }
+        
+        function toggleAction(key, index, isPositive) {
+            const category = isPositive ? 'positive' : 'negative';
+            if (!db.actionProgress[category][key]) db.actionProgress[category][key] = [];
+            const idx = db.actionProgress[category][key].indexOf(index);
+            if (idx === -1) db.actionProgress[category][key].push(index);
+            else db.actionProgress[category][key].splice(idx, 1);
+            saveGlobal();
+        }
+        
+        function getProgress(key, isPositive) {
+            const category = isPositive ? 'positive' : 'negative';
+            const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
+            const completed = db.actionProgress[category][key] || [];
+            return { completed: completed.length, total: actions.length };
+        }
+        
+        function getMonthDisplay() { const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return `${months[currentMonth]} ${currentYear}`; }
+        
+        function getInvestmentsByType() {
+            let monthData = getMonthData();
+            let investments = monthData.investments || [];
+            let fixa = investments.filter(i => i.assetType === "Renda Fixa").reduce((s,i) => s + i.amount, 0);
+            let variavel = investments.filter(i => i.assetType === "Renda Variável").reduce((s,i) => s + i.amount, 0);
+            let cripto = investments.filter(i => i.assetType === "Criptomoedas").reduce((s,i) => s + i.amount, 0);
+            return { fixa, variavel, cripto };
+        }
+        
+        function updatePortfolioChart() {
+            const { fixa, variavel, cripto } = getInvestmentsByType();
+            const ctx = document.getElementById('portfolioChart')?.getContext('2d');
+            if (!ctx) return;
+            if (portfolioChart) portfolioChart.destroy();
+            portfolioChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: distLabels, datasets: [{ data: distData, backgroundColor: distColors.slice(0, distData.length), borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 } } } }, cutout: '50%' }
+                data: { labels: ['Renda Fixa', 'Renda Variável', 'Criptomoedas'], datasets: [{ data: [fixa, variavel, cripto], backgroundColor: ['#8b5cf6', '#ec489a', '#f59e0b'], borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let total = fixa + variavel + cripto; let percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0; return `${context.label}: R$ ${context.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${percentage}%)`; } } } }, cutout: '65%' }
             });
+            let total = fixa + variavel + cripto;
+            let legendHtml = `<div class="legend-item"><div class="legend-color" style="background: #8b5cf6;"></div><span>Renda Fixa: R$ ${fixa.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((fixa/total)*100).toFixed(1) : 0}%)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: #ec489a;"></div><span>Renda Variável: R$ ${variavel.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((variavel/total)*100).toFixed(1) : 0}%)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: #f59e0b;"></div><span>Criptomoedas: R$ ${cripto.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${total > 0 ? ((cripto/total)*100).toFixed(1) : 0}%)</span></div>`;
+            const legendDiv = document.getElementById('chart-legend');
+            if (legendDiv) legendDiv.innerHTML = legendHtml;
         }
-    }
-    
-    function addGoalWithImage() {
-        let name = document.getElementById('new-goal-name')?.value.trim();
-        let target = parseFloat(document.getElementById('new-goal-target')?.value);
-        let monthly = parseFloat(document.getElementById('new-goal-monthly')?.value);
-        let current = parseFloat(document.getElementById('new-goal-current')?.value) || 0;
-        let type = document.getElementById('new-goal-type')?.value;
-        let imageInput = document.getElementById('new-goal-image-input');
         
-        if(!name || isNaN(target) || target<=0) return alert("Preencha o nome e valor da meta");
-        if(isNaN(monthly) || monthly<=0) return alert("Informe o aporte mensal");
+        // Funções de Metas
+        function getGoalType(goal) {
+            if (goal.target <= 10000) return "short";
+            if (goal.target <= 50000) return "medium";
+            if (goal.name.toLowerCase().includes("educa") || goal.name.toLowerCase().includes("curso") || goal.name.toLowerCase().includes("faculdade")) return "education";
+            if (goal.name.toLowerCase().includes("viagem") || goal.name.toLowerCase().includes("sonho")) return "dream";
+            return "long";
+        }
         
-        let saldo = current, meses = 0;
-        let taxa = 0.01;
-        while(saldo < target && meses < 600) { saldo = (saldo + monthly) * (1 + taxa); meses++; }
+        function getGoalTypeLabel(type) {
+            const types = { short: "Curto Prazo", medium: "Médio Prazo", long: "Longo Prazo", education: "Educação", dream: "Sonhos" };
+            return types[type] || "Longo Prazo";
+        }
         
-        let newGoal = { id: Date.now(), name, target, monthly, months: meses, currentAmount: current, type: type };
+        function getGoalIcon(type) {
+            const icons = { short: "⏱️", medium: "📊", long: "🏡", education: "📚", dream: "✨" };
+            return icons[type] || "🎯";
+        }
         
-        if (imageInput.files && imageInput.files[0]) {
-            let reader = new FileReader();
-            reader.onload = function(event) {
-                newGoal.image = event.target.result;
+        function calculateProgress(goal) {
+            let current = goal.currentAmount || 0;
+            let percent = (current / goal.target) * 100;
+            return Math.min(percent, 100);
+        }
+        
+        function calculateMilestones(goal) {
+            let current = goal.currentAmount || 0;
+            let target = goal.target;
+            return { m25: current >= target * 0.25, m50: current >= target * 0.5, m75: current >= target * 0.75, m100: current >= target };
+        }
+        
+        function getGoalBadge(goal) {
+            let percent = calculateProgress(goal);
+            if (percent >= 100) return { name: "🏆 CONCLUÍDA", color: "#4ade80", points: 1000 };
+            if (percent >= 75) return { name: "🥇 OURO", color: "#fbbf24", points: 500 };
+            if (percent >= 50) return { name: "🥈 PRATA", color: "#c0c0c0", points: 250 };
+            if (percent >= 25) return { name: "🥉 BRONZE", color: "#cd7f32", points: 100 };
+            return { name: "🌱 INICIANTE", color: "#8b5cf6", points: 0 };
+        }
+        
+        function calculateSuggestion(goal) {
+            let current = goal.currentAmount || 0;
+            let target = goal.target;
+            let remaining = target - current;
+            let currentMonthly = goal.monthly;
+            let remainingMonths = goal.months;
+            if (remaining <= 0) return null;
+            let neededMonthly = remaining / remainingMonths;
+            if (currentMonthly >= neededMonthly) return null;
+            let extraNeeded = neededMonthly - currentMonthly;
+            let newMonths = Math.ceil(remaining / (currentMonthly + 500));
+            return { extraNeeded: Math.ceil(extraNeeded), newMonths, accelerator: 500 };
+        }
+        
+        function getRecentAchievements(goal) {
+            let achievements = [];
+            let percent = calculateProgress(goal);
+            if (percent >= 25 && !goal._achieved25) { goal._achieved25 = true; achievements.push("🎯 25% da meta atingida!"); }
+            if (percent >= 50 && !goal._achieved50) { goal._achieved50 = true; achievements.push("🎯 50% da meta atingida!"); }
+            if (percent >= 75 && !goal._achieved75) { goal._achieved75 = true; achievements.push("🎯 75% da meta atingida!"); }
+            if (percent >= 100 && !goal._achieved100) { goal._achieved100 = true; achievements.push("🏆 META CONCLUÍDA! Parabéns!"); }
+            return achievements;
+        }
+        
+        function getNotifications(goals) {
+            let notifications = [];
+            goals.forEach(goal => {
+                let percent = calculateProgress(goal);
+                if (percent >= 90 && percent < 100) notifications.push({ icon: "🎉", text: `"${goal.name}" está a ${Math.round(100-percent)}% de ser concluída!` });
+            });
+            return notifications.slice(0, 3);
+        }
+        
+        function openModal(imageSrc) {
+            let modal = document.getElementById('imageModal');
+            let modalImg = document.getElementById('modalImage');
+            modal.style.display = 'flex';
+            modalImg.src = imageSrc;
+        }
+        
+        function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
+        
+        function triggerImageUpload(goalId) {
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                let file = e.target.files[0];
+                if (file) {
+                    let reader = new FileReader();
+                    reader.onload = function(event) {
+                        let monthData = getMonthData();
+                        let goal = monthData.goals.find(g => g.id == goalId);
+                        if (goal) { goal.image = event.target.result; saveGlobal(); renderMetas(); }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+        
+        function updateGoalAmount(goalId, newAmount) {
+            if (!newAmount || newAmount <= 0) {
+                newAmount = parseFloat(prompt("💰 Quanto você quer adicionar a esta meta? (R$)", "100"));
+                if (isNaN(newAmount) || newAmount <= 0) return alert("Valor inválido!");
+            }
+            let monthData = getMonthData();
+            let goal = monthData.goals.find(g => g.id == goalId);
+            if (goal) { 
+                goal.currentAmount = (goal.currentAmount || 0) + newAmount; 
+                saveGlobal(); 
+                renderMetas();
+                alert(`✅ R$ ${newAmount.toFixed(2)} adicionado à meta "${goal.name}"!`);
+            }
+        }
+        
+        function renderMetas() {
+            let monthData = getMonthData();
+            let goals = monthData.goals || [];
+            let totalGoals = goals.length;
+            let totalTarget = goals.reduce((s,g) => s + g.target, 0);
+            let totalCurrent = goals.reduce((s,g) => s + (g.currentAmount || 0), 0);
+            let avgProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+            let totalRemaining = totalTarget - totalCurrent;
+            
+            let filteredGoals = currentGoalFilter === "all" ? goals : goals.filter(g => getGoalType(g) === currentGoalFilter);
+            let notifications = getNotifications(goals);
+            let typesCount = { short: 0, medium: 0, long: 0, education: 0, dream: 0 };
+            let typesValue = { short: 0, medium: 0, long: 0, education: 0, dream: 0 };
+            goals.forEach(g => { let t = getGoalType(g); typesCount[t]++; typesValue[t] += g.target; });
+            
+            let html = `
+                <div class="card">
+                    <h3><i class="fas fa-flag-checkered"></i> Meu Planejador de Metas</h3>
+                    <div class="filter-bar">
+                        <div class="filter-chip ${currentGoalFilter === 'all' ? 'active' : ''}" onclick="setGoalFilter('all')">📊 Todas</div>
+                        <div class="filter-chip ${currentGoalFilter === 'short' ? 'active' : ''}" onclick="setGoalFilter('short')">⏱️ Curto Prazo</div>
+                        <div class="filter-chip ${currentGoalFilter === 'medium' ? 'active' : ''}" onclick="setGoalFilter('medium')">📊 Médio Prazo</div>
+                        <div class="filter-chip ${currentGoalFilter === 'long' ? 'active' : ''}" onclick="setGoalFilter('long')">🏡 Longo Prazo</div>
+                        <div class="filter-chip ${currentGoalFilter === 'education' ? 'active' : ''}" onclick="setGoalFilter('education')">📚 Educação</div>
+                        <div class="filter-chip ${currentGoalFilter === 'dream' ? 'active' : ''}" onclick="setGoalFilter('dream')">✨ Sonhos</div>
+                    </div>
+                    <div class="stats-mini-cards">
+                        <div class="stat-mini"><div class="value">${totalGoals}</div><div class="label">Metas</div></div>
+                        <div class="stat-mini"><div class="value">R$ ${(totalCurrent/1000).toFixed(0)}K</div><div class="label">Progresso</div></div>
+                        <div class="stat-mini"><div class="value">R$ ${(totalRemaining/1000).toFixed(0)}K</div><div class="label">Faltam</div></div>
+                        <div class="stat-mini"><div class="value">${Math.round(avgProgress)}%</div><div class="label">Média</div></div>
+                    </div>
+                    ${notifications.length > 0 ? `<div class="notifications-area"><h3 style="margin-bottom:8px;">🔔 Lembretes</h3>${notifications.map(n => `<div class="notification"><span class="notification-icon">${n.icon}</span><span>${n.text}</span></div>`).join('')}</div>` : ''}
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+                        <input type="text" id="new-goal-name" placeholder="Nome da meta (ex: Comprar Casa)" style="flex:2;">
+                        <select id="new-goal-type" style="flex:1;">
+                            <option value="short">⏱️ Curto Prazo</option>
+                            <option value="medium">📊 Médio Prazo</option>
+                            <option value="long">🏡 Longo Prazo</option>
+                            <option value="education">📚 Educação</option>
+                            <option value="dream">✨ Sonhos</option>
+                        </select>
+                    </div>
+                    <label class="field-label">🎯 VALOR NECESSÁRIO (R$)</label>
+                    <input type="number" id="new-goal-target" placeholder="Ex: 50000">
+                    <label class="field-label">💰 APORTE MENSAL (R$)</label>
+                    <input type="number" id="new-goal-monthly" placeholder="Ex: 1000">
+                    <label class="field-label">💪 JÁ TENHO (R$) - Opcional</label>
+                    <input type="number" id="new-goal-current" placeholder="Ex: 5000" value="0">
+                    <div class="image-upload-preview">
+                        <img id="new-goal-preview" class="image-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('new-goal-image-input').click()"><i class="fas fa-image"></i> Foto do sonho</button>
+                        <input type="file" id="new-goal-image-input" accept="image/*" style="display:none">
+                    </div>
+                    <button onclick="addGoalWithImage()"><i class="fas fa-plus-circle"></i> Criar Nova Meta</button>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-chart-pie"></i> Distribuição das Metas</h3>
+                    <div class="distribution-chart"><canvas id="goalsDistributionChart" width="180" height="180"></canvas></div>
+                    <div style="margin-top: 12px;">${Object.entries(typesCount).filter(([k,v]) => v > 0).map(([k,v]) => `<div style="display:flex; justify-content:space-between; font-size:0.7rem; margin:4px 0; color: var(--text-secondary);"><span>${getGoalIcon(k)} ${getGoalTypeLabel(k)}</span><span>${v} meta(s) - R$ ${(typesValue[k]/1000).toFixed(0)}K</span></div>`).join('')}</div>
+                </div>`;
+            
+            if (filteredGoals.length === 0) {
+                html += `<div class="empty-state">Nenhuma meta cadastrada. Clique em "Criar Nova Meta" para começar!</div>`;
+            } else {
+                filteredGoals.forEach(goal => {
+                    let progress = calculateProgress(goal);
+                    let milestones = calculateMilestones(goal);
+                    let badge = getGoalBadge(goal);
+                    let suggestion = calculateSuggestion(goal);
+                    let achievements = getRecentAchievements(goal);
+                    let type = getGoalType(goal);
+                    let remainingMonths = goal.months;
+                    let currentAmount = goal.currentAmount || 0;
+                    let remaining = goal.target - currentAmount;
+                    let monthlyRate = remainingMonths > 0 ? remaining / remainingMonths : 0;
+                    let isOnTrack = goal.monthly >= monthlyRate;
+                    
+                    html += `
+                        <div class="goal-card">
+                            <div class="goal-header">
+                                <div class="goal-title">
+                                    ${goal.image ? `<img src="${goal.image}" class="goal-image" onclick="openModal('${goal.image}')" style="width:50px;height:50px;">` : `<div class="goal-image" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;" onclick="triggerImageUpload(${goal.id})">${getGoalIcon(type)}</div>`}
+                                    <span>${goal.name}</span>
+                                </div>
+                                <span class="goal-badge" style="background:${badge.color}20; color:${badge.color};">${badge.name} ${badge.points > 0 ? `+${badge.points}` : ''}</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-custom"><div class="progress-fill-custom" style="width: ${progress}%"></div></div>
+                                <div class="progress-stats"><span>R$ ${currentAmount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span><span>${progress.toFixed(1)}%</span><span>R$ ${goal.target.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>
+                            </div>
+                            <div class="milestones">
+                                <div class="milestone ${milestones.m25 ? 'reached' : ''}">🎯 25%</div>
+                                <div class="milestone ${milestones.m50 ? 'reached' : ''}">🎯 50%</div>
+                                <div class="milestone ${milestones.m75 ? 'reached' : ''}">🎯 75%</div>
+                                <div class="milestone ${milestones.m100 ? 'reached' : ''}">🏆 100%</div>
+                            </div>
+                            <div class="goal-info-grid">
+                                <div class="goal-info-item"><div class="label">📅 PREVISÃO</div><div class="value">${goal.months} meses</div></div>
+                                <div class="goal-info-item"><div class="label">💰 APORTE MENSAL</div><div class="value">R$ ${goal.monthly.toFixed(2)}</div></div>
+                                <div class="goal-info-item"><div class="label">📈 RITMO ATUAL</div><div class="value">${isOnTrack ? '✅ Dentro do prazo' : '⚠️ Atrasada'}</div></div>
+                                <div class="goal-info-item"><div class="label">💪 QUANTO FALTA</div><div class="value">R$ ${remaining.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div></div>
+                            </div>
+                            ${suggestion ? `<div class="suggestion-box">💡 <strong>Sugestão:</strong> Aumente seu aporte em R$ ${suggestion.extraNeeded}/mês ou adicione +R$ ${suggestion.accelerator}/mês para concluir em ${suggestion.newMonths} meses (antecipa ${goal.months - suggestion.newMonths} meses)</div>` : ''}
+                            ${achievements.length > 0 ? `<div class="achievements">${achievements.map(a => `<span class="achievement">${a}</span>`).join('')}</div>` : ''}
+                            <div class="goal-actions">
+                                <button onclick="updateGoalAmount(${goal.id}, 0)" style="background:rgba(74,222,128,0.2);color:#4ade80;"><i class="fas fa-plus-circle"></i> Adicionar aporte</button>
+                                <button onclick="triggerImageUpload(${goal.id})" style="background:rgba(139,92,246,0.2);color:var(--accent-primary);"><i class="fas fa-image"></i> Trocar foto</button>
+                                <button onclick="deleteItem('goals',${goal.id})" class="btn-del"><i class="fas fa-trash"></i> Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('metas-content').innerHTML = html;
+            
+            let ctx = document.getElementById('goalsDistributionChart')?.getContext('2d');
+            if (ctx && goals.length > 0) {
+                let distData = Object.values(typesValue).filter(v => v > 0);
+                let distLabels = Object.keys(typesValue).filter(k => typesValue[k] > 0).map(k => getGoalTypeLabel(k));
+                let distColors = ['#8b5cf6', '#ec489a', '#f59e0b', '#4ade80', '#fbbf24'];
+                if (goalsDistributionChart) goalsDistributionChart.destroy();
+                goalsDistributionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: distLabels, datasets: [{ data: distData, backgroundColor: distColors.slice(0, distData.length), borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 } } } }, cutout: '50%' }
+                });
+            }
+        }
+        
+        function addGoalWithImage() {
+            let name = document.getElementById('new-goal-name')?.value.trim();
+            let target = parseFloat(document.getElementById('new-goal-target')?.value);
+            let monthly = parseFloat(document.getElementById('new-goal-monthly')?.value);
+            let current = parseFloat(document.getElementById('new-goal-current')?.value) || 0;
+            let type = document.getElementById('new-goal-type')?.value;
+            let imageInput = document.getElementById('new-goal-image-input');
+            
+            if(!name || isNaN(target) || target<=0) return alert("Preencha o nome e valor da meta");
+            if(isNaN(monthly) || monthly<=0) return alert("Informe o aporte mensal");
+            
+            let saldo = current, meses = 0;
+            let taxa = 0.01;
+            while(saldo < target && meses < 600) { saldo = (saldo + monthly) * (1 + taxa); meses++; }
+            
+            let newGoal = { id: Date.now(), name, target, monthly, months: meses, currentAmount: current, type: type };
+            
+            if (imageInput.files && imageInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    newGoal.image = event.target.result;
+                    let monthData = getMonthData();
+                    monthData.goals.push(newGoal);
+                    document.getElementById('new-goal-name').value = "";
+                    document.getElementById('new-goal-target').value = "";
+                    document.getElementById('new-goal-monthly').value = "";
+                    document.getElementById('new-goal-current').value = "0";
+                    document.getElementById('new-goal-image-input').value = "";
+                    document.getElementById('new-goal-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E";
+                    saveGlobal();
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
                 let monthData = getMonthData();
                 monthData.goals.push(newGoal);
                 document.getElementById('new-goal-name').value = "";
                 document.getElementById('new-goal-target').value = "";
                 document.getElementById('new-goal-monthly').value = "";
                 document.getElementById('new-goal-current').value = "0";
-                document.getElementById('new-goal-image-input').value = "";
-                document.getElementById('new-goal-preview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E";
                 saveGlobal();
-            };
-            reader.readAsDataURL(imageInput.files[0]);
-        } else {
+            }
+        }
+        
+        function setGoalFilter(filter) { currentGoalFilter = filter; renderMetas(); }
+        
+        function renderHome() {
             let monthData = getMonthData();
-            monthData.goals.push(newGoal);
-            document.getElementById('new-goal-name').value = "";
-            document.getElementById('new-goal-target').value = "";
-            document.getElementById('new-goal-monthly').value = "";
-            document.getElementById('new-goal-current').value = "0";
+            let transactions = monthData.transactions || [];
+            let investments = monthData.investments || [];
+            
+            let cashBalance = 0, card1Balance = 0, card2Balance = 0;
+            transactions.forEach(t => {
+                let valueOp = t.type === 'in' ? t.value : -t.value;
+                if (t.method === 'money') cashBalance += valueOp;
+                else if (t.method === 'card1') card1Balance += valueOp;
+                else if (t.method === 'card2') card2Balance += valueOp;
+            });
+            
+            let totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
+            let totalDebt = 0;
+            if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
+            if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
+            let netWorth = cashBalance + totalInvestments - totalDebt;
+            let monthlySurplus = cashBalance - totalDebt;
+            
+            let timelineHtml = `<div class="timeline-container">`;
+            if(transactions.length === 0) {
+                timelineHtml = `<div class="empty-timeline"><i class="fas fa-inbox" style="font-size:2rem; opacity:0.5; margin-bottom:8px; display:block;"></i>Nenhuma movimentação neste período</div>`;
+            } else {
+                transactions.slice(0, 10).forEach(t => {
+                    const iconClass = getCategoryIcon(t.category);
+                    const isIncome = t.type === 'in';
+                    timelineHtml += `
+                        <div class="timeline-item">
+                            <div class="timeline-icon ${isIncome ? 'income' : 'expense'}">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="timeline-desc">${t.description}</span>
+                                    <span class="timeline-value ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'} R$ ${t.value.toFixed(2)}</span>
+                                </div>
+                                <div class="timeline-details">
+                                    <span class="timeline-category"><i class="${iconClass}"></i> ${t.category}</span>
+                                    <span class="timeline-method"><i class="fas fa-credit-card"></i> ${t.method === 'money' ? 'Pix/Dinheiro' : t.method === 'card1' ? db.card1Name : db.card2Name}</span>
+                                    <span class="timeline-date"><i class="far fa-calendar-alt"></i> ${t.date || new Date().toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            timelineHtml += `</div>`;
+            
+            let headerHtml = `
+                <div class="app-header">
+                    <div class="header-top">
+                        <div class="avatar">${db.name ? db.name.charAt(0).toUpperCase() : "📊"}</div>
+                        <div class="user-info">
+                            <div class="question-label">Como gostaria de ser chamado?</div>
+                            <h2 onclick="askUserName()">${db.name || "Definir nome"} ✏️</h2>
+                            <div class="user-email">${currentUser?.email || ""}</div>
+                        </div>
+                    </div>
+                    <div class="quote-text">${db.quote || "📊 Planeje o fluxo, colha os resultados"}</div>
+                </div>
+                <div class="period-card">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;"><i class="fas fa-calendar-alt" style="color:var(--accent-primary);"></i><span style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent-primary);">Período de análise</span></div>
+                    <div class="period-selector-row">
+                        <select id="month-selector">${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i)=>`<option value="${i}" ${i===selectedMonth?'selected':''}>${m}</option>`).join('')}</select>
+                        <input type="number" id="year-selector" min="2023" max="2035" value="${selectedYear}" style="width:95px">
+                    </div>
+                    <button class="period-confirm-btn" onclick="confirmPeriod()"><i class="fas fa-check-circle"></i> Confirmar período</button>
+                    <div class="current-period-badge">
+                        <small>📅 Período atual</small>
+                        <strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong>
+                    </div>
+                </div>
+                <div class="balance-card ${netWorth>0?'positive':netWorth<0?'negative':'neutral'}">
+                    <p style="font-size:0.65rem; opacity:0.8;">📊 PATRIMÔNIO LÍQUIDO</p>
+                    <div class="main-amount">R$ ${netWorth.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                    <div class="grid-info">
+                        <div class="info-item">💰 SALDO DISPONÍVEL <b>R$ ${cashBalance.toFixed(2)}</b></div>
+                        <div class="info-item">📈 INVESTIMENTOS <b>R$ ${totalInvestments.toFixed(2)}</b></div>
+                        <div class="info-item">💳 ${db.card1Name} <b style="color:${card1Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card1Balance).toFixed(2)}</b>${card1Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
+                        <div class="info-item">💳 ${db.card2Name} <b style="color:${card2Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card2Balance).toFixed(2)}</b>${card2Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
+                        <small style="opacity:0.7;">💰 SOBRA DO MÊS</small>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);">R$ ${monthlySurplus.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                    </div>
+                </div>
+                <div class="card"><h3><i class="fas fa-history"></i> Últimas movimentações</h3>${timelineHtml}</div>
+            `;
+            document.getElementById('tab-home').innerHTML = headerHtml;
+            document.getElementById('month-selector').onchange = function() { selectedMonth = parseInt(this.value); };
+            document.getElementById('year-selector').onchange = function() { selectedYear = parseInt(this.value); };
+        }
+        
+        function renderDiamond() {
+            let monthData = getMonthData();
+            let transactions = monthData.transactions || [];
+            let investments = monthData.investments || [];
+            let cashBalance = 0, card1Balance = 0, card2Balance = 0;
+            transactions.forEach(t => {
+                let valueOp = t.type === 'in' ? t.value : -t.value;
+                if (t.method === 'money') cashBalance += valueOp;
+                else if (t.method === 'card1') card1Balance += valueOp;
+                else if (t.method === 'card2') card2Balance += valueOp;
+            });
+            let totalDebt = 0;
+            if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
+            if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
+            let net = cashBalance + investments.reduce((s,i)=>s+i.amount,0) - totalDebt;
+            
+            let isPositive = net >= 0;
+            const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
+            const key = getMonthKey();
+            const { completed, total } = getProgress(key, isPositive);
+            const percent = total > 0 ? (completed / total) * 100 : 0;
+            
+            let html = `<div style="text-align:center;margin-bottom:20px;"><i class="${isPositive ? 'fas fa-gem' : 'fas fa-life-ring'}" style="font-size:2rem;color:${isPositive?'#4ade80':'#f87171'}"></i><h2 style="font-size:1.2rem;margin-top:8px;background:linear-gradient(135deg,#fff,var(--accent-primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${isPositive ? '💎 Jornada da Prosperidade' : '🆘 Plano de Recuperação'}</h2><p style="font-size:0.75rem;color:var(--text-secondary);">${isPositive ? 'Continue no caminho da liberdade financeira!' : 'Com planejamento, você pode reverter esta situação.'}</p></div>
+            <div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div>
+            <div class="progress-text">${completed} de ${total} ações concluídas</div>
+            <div class="action-list">`;
+            
+            actions.forEach((action, idx) => {
+                const isCompleted = db.actionProgress[isPositive ? 'positive' : 'negative'][key]?.includes(idx) || false;
+                html += `<div class="action-item ${isCompleted ? 'completed' : ''}" onclick="toggleAction('${key}', ${idx}, ${isPositive})">
+                            <input type="checkbox" ${isCompleted ? 'checked' : ''} onclick="event.stopPropagation(); toggleAction('${key}', ${idx}, ${isPositive})">
+                            <span class="action-text">${action}</span>
+                        </div>`;
+            });
+            html += `</div>`;
+            document.getElementById('dynamic-tips-card').innerHTML = html;
+            
+            const navVision = document.getElementById('nav-vision');
+            if (navVision) navVision.innerHTML = isPositive ? '<i class="fas fa-gem"></i>Visão' : '<i class="fas fa-life-ring"></i>Recuperação';
+        }
+        
+        function renderExtrato() {
+            let monthData = getMonthData();
+            let transactions = monthData.transactions || [];
+            let html = `<div class="card"><h3>📝 Novo lançamento - ${getMonthDisplay()}</h3><div style="display:flex; gap:12px;"><select id="t-type" style="flex:1"><option value="out">💸 Saída</option><option value="in">💰 Entrada</option></select><select id="t-method" style="flex:1"><option value="money">🏦 Dinheiro/Pix</option><option value="card1">💳 ${db.card1Name}</option><option value="card2">💳 ${db.card2Name}</option></select></div><select id="t-cat">${getAllCategories().map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}</select><input type="number" id="t-val" placeholder="Valor (R$)"><input type="text" id="t-desc" placeholder="Descrição"><button onclick="addTransaction()">Salvar lançamento</button></div><div class="card"><h3>📋 Histórico completo - ${getMonthDisplay()}</h3>`;
+            if(transactions.length===0) html += `<div class="empty-state">Nenhum lançamento</div>`;
+            transactions.forEach(t=>{
+                let iconClass = getCategoryIcon(t.category);
+                html += `<div class="list-item"><div style="display:flex; align-items:center; gap:14px; flex:1;"><div class="cat-icon"><i class="${iconClass}"></i></div><div><b style="color:var(--text-primary);">${t.description}</b><br><span class="badge-category"><i class="${iconClass}"></i> ${t.category}</span><br><small style="color:var(--text-secondary);">${t.date}</small></div></div><div style="color:${t.type==='in'?'#4ade80':'#f87171'}"><b>${t.type==='in'?'+':'-'} R$ ${t.value.toFixed(2)}</b><br><button onclick="deleteItem('transactions',${t.id})" class="btn-del">x</button></div></div>`;
+            });
+            html += `</div>`;
+            document.getElementById('extrato-content').innerHTML = html;
+        }
+        
+        function renderInvest() {
+            let monthData = getMonthData();
+            let investments = monthData.investments || [];
+            let { fixa, variavel, cripto } = getInvestmentsByType();
+            
+            let html = `<div class="card"><h3>📊 Novo Investimento - ${getMonthDisplay()}</h3>
+                <div class="investment-tab-bar">
+                    <div class="inv-tab ${currentInvTab === 'renda-fixa' ? 'active' : ''}" onclick="setInvTab('renda-fixa')"><i class="fas fa-building-columns"></i> R.Fixa</div>
+                    <div class="inv-tab ${currentInvTab === 'renda-variavel' ? 'active' : ''}" onclick="setInvTab('renda-variavel')"><i class="fas fa-chart-line"></i> R.Variável</div>
+                    <div class="inv-tab ${currentInvTab === 'cripto' ? 'active' : ''}" onclick="setInvTab('cripto')"><i class="fab fa-bitcoin"></i> Cripto</div>
+                </div>
+                <div id="inv-panel-renda-fixa" class="inv-panel ${currentInvTab === 'renda-fixa' ? 'active' : ''}">
+                    ${RENDA_FIXA_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-fixa').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-fixa" placeholder="Nome do ativo"><input type="number" id="i-val-fixa" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Fixa')">Registrar</button>
+                </div>
+                <div id="inv-panel-renda-variavel" class="inv-panel ${currentInvTab === 'renda-variavel' ? 'active' : ''}">
+                    ${RENDA_VARIAVEL_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-variavel').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-variavel" placeholder="Nome do ativo"><input type="number" id="i-val-variavel" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Variável')">Registrar</button>
+                </div>
+                <div id="inv-panel-cripto" class="inv-panel ${currentInvTab === 'cripto' ? 'active' : ''}">
+                    ${CRIPTO_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-cripto').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-cripto" placeholder="Nome da criptomoeda"><input type="number" id="i-val-cripto" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Criptomoedas')">Registrar</button>
+                </div>
+            </div>
+            <div class="card"><h3>🧮 Calculadora de Juros Compostos</h3><input type="number" id="s-val" placeholder="Aporte inicial" oninput="simulateCompound()"><input type="number" id="s-mensal" placeholder="Aporte mensal" oninput="simulateCompound()"><input type="number" id="s-mes" placeholder="Meses" oninput="simulateCompound()"><select id="s-taxa" onchange="simulateCompound()"><option value="0.01">1,0% a.m.</option><option value="0.012">1,2% a.m.</option></select><div id="s-res" style="display:none"><b id="res-total" style="color:var(--accent-primary);">R$ 0</b><small id="res-juros"></small></div></div>
+            <div class="card"><h3>📊 Distribuição da Carteira</h3>
+                <div class="chart-container"><canvas id="portfolioChart" width="280" height="250"></canvas></div>
+                <div id="chart-legend" class="chart-legend"></div>
+                <div class="investment-list"><div class="section-title">📈 Seus Ativos</div>`;
+            
+            let fixos = investments.filter(i=>i.assetType === "Renda Fixa");
+            let variaveis = investments.filter(i=>i.assetType === "Renda Variável");
+            let criptos = investments.filter(i=>i.assetType === "Criptomoedas");
+            
+            if(investments.length === 0) {
+                html += `<div class="empty-state">Nenhum investimento registrado</div>`;
+            } else {
+                if(fixos.length > 0) { html += `<div style="margin-top:8px;"><small style="color:#8b5cf6;">🏦 RENDA FIXA</small></div>`; fixos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-building-columns"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+                if(variaveis.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#ec489a;">📈 RENDA VARIÁVEL</small></div>`; variaveis.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-chart-line"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+                if(criptos.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#f59e0b;">🪙 CRIPTOMOEDAS</small></div>`; criptos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fab fa-bitcoin"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+            }
+            html += `</div></div>`;
+            document.getElementById('invest-content').innerHTML = html;
+            updatePortfolioChart();
+        }
+        
+        let selectedIconForNew = "fas fa-tag";
+        function openIconSelector() {
+            let panel = document.getElementById('icon-selector-panel');
+            if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            let grid = document.getElementById('icon-grid');
+            if(grid) {
+                const icons = ["fas fa-briefcase","fas fa-rocket","fas fa-chart-simple","fas fa-cart-shopping","fas fa-home","fas fa-bolt","fas fa-car","fas fa-graduation-cap","fas fa-heartbeat","fas fa-plane","fas fa-chart-line","fas fa-laptop","fas fa-gift","fas fa-dog","fas fa-coffee"];
+                grid.innerHTML = icons.map(ic => `<div class="icon-option" onclick="selectIcon('${ic}')"><i class="${ic}"></i></div>`).join('');
+            }
+        }
+        function selectIcon(ic) { selectedIconForNew = ic; document.querySelectorAll('.icon-option').forEach(el=>el.classList.remove('selected')); if(event.currentTarget) event.currentTarget.classList.add('selected'); }
+        function confirmAddCategory() {
+            let catName = document.getElementById('new-cat-name')?.value.trim();
+            if(!catName) return alert("Digite o nome da categoria");
+            if(getAllCategories().some(c=>c.name.toLowerCase()===catName.toLowerCase())) return alert("Categoria já existe");
+            db.customCategories.push({ name: catName, icon: selectedIconForNew });
+            document.getElementById('new-cat-name').value = "";
+            document.getElementById('icon-selector-panel').style.display = 'none';
             saveGlobal();
         }
-    }
-    
-    function setGoalFilter(filter) { currentGoalFilter = filter; renderMetas(); }
-
-    function renderHome() {
-        let monthData = getMonthData();
-        let transactions = monthData.transactions || [];
-        let investments = monthData.investments || [];
+        function deleteCustomCategory(catName) { db.customCategories = db.customCategories.filter(c=>c.name!==catName); saveGlobal(); }
         
-        let cashBalance = 0, card1Balance = 0, card2Balance = 0;
-        transactions.forEach(t => {
-            let valueOp = t.type === 'in' ? t.value : -t.value;
-            if (t.method === 'money') cashBalance += valueOp;
-            else if (t.method === 'card1') card1Balance += valueOp;
-            else if (t.method === 'card2') card2Balance += valueOp;
-        });
-        
-        let totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
-        let totalDebt = 0;
-        if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
-        if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
-        let netWorth = cashBalance + totalInvestments - totalDebt;
-        let monthlySurplus = cashBalance - totalDebt;
-        
-        let timelineHtml = `<div class="timeline-container">`;
-        if(transactions.length === 0) {
-            timelineHtml = `<div class="empty-timeline"><i class="fas fa-inbox" style="font-size:2rem; opacity:0.5; margin-bottom:8px; display:block;"></i>Nenhuma movimentação neste período</div>`;
-        } else {
-            transactions.slice(0, 10).forEach(t => {
-                const iconClass = getCategoryIcon(t.category);
-                const isIncome = t.type === 'in';
-                timelineHtml += `
-                    <div class="timeline-item">
-                        <div class="timeline-icon ${isIncome ? 'income' : 'expense'}">
-                            <i class="${iconClass}"></i>
+        function renderConfig() {
+            let custom = db.customCategories || [];
+            let html = `
+                <div class="card">
+                    <h3><i class="fas fa-palette"></i> Personalização Visual</h3>
+                    <div class="config-section">
+                        <div class="config-option">
+                            <label>🎨 Tema</label>
+                            <select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)">
+                                <option value="dark" ${db.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option>
+                                <option value="light" ${db.theme === 'light' ? 'selected' : ''}>☀️ Claro</option>
+                                <option value="neon" ${db.theme === 'neon' ? 'selected' : ''}>💚 Neon</option>
+                            </select>
                         </div>
-                        <div class="timeline-content">
-                            <div class="timeline-header">
-                                <span class="timeline-desc">${t.description}</span>
-                                <span class="timeline-value ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'} R$ ${t.value.toFixed(2)}</span>
-                            </div>
-                            <div class="timeline-details">
-                                <span class="timeline-category"><i class="${iconClass}"></i> ${t.category}</span>
-                                <span class="timeline-method"><i class="fas fa-credit-card"></i> ${t.method === 'money' ? 'Pix/Dinheiro' : t.method === 'card1' ? db.card1Name : db.card2Name}</span>
-                                <span class="timeline-date"><i class="far fa-calendar-alt"></i> ${t.date || new Date().toLocaleDateString()}</span>
-                            </div>
+                        <div class="config-option">
+                            <label>🔤 Tamanho da fonte</label>
+                            <select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)">
+                                <option value="small" ${db.fontSize === 'small' ? 'selected' : ''}>Pequeno</option>
+                                <option value="medium" ${db.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option>
+                                <option value="large" ${db.fontSize === 'large' ? 'selected' : ''}>Grande</option>
+                            </select>
+                        </div>
+                        <div class="config-option">
+                            <label>✨ Animações</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="animations-toggle" ${db.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="config-option">
+                            <label>💫 Efeito de brilho nos botões</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="glow-toggle" ${db.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="config-option">
+                            <label>📦 Modo compacto (cards menores)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="compact-toggle" ${db.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
-                `;
-            });
+                </div>
+                <div class="card"><h3>⚙️ Personalização de Cartões</h3>
+                    <input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${db.card1Name}">
+                    <input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${db.card2Name}">
+                    <button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button>
+                    <small style="display:block; margin-top:8px; color:var(--text-secondary);">✏️ Edite os nomes e clique em "Salvar" para confirmar</small>
+                </div>
+                <div class="card"><h3>🏷️ Categorias Personalizadas</h3>
+                    <div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:var(--accent-primary); width:auto;">Escolher ícone</button></div>
+                    <div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div>
+                    <div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:var(--text-secondary);">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div>
+                </div>
+                <div class="card"><h3>📝 Frase de impacto</h3>
+                    <input type="text" id="quote-input" value="${db.quote || ''}" onblur="saveQuote()">
+                    <small style="display:block; margin-top:6px; color:var(--text-secondary);">Clique fora do campo para salvar</small>
+                </div>
+                <div class="card">
+                    <button id="logoutButton" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair da conta</button>
+                </div>
+            `;
+            document.getElementById('config-content').innerHTML = html;
         }
-        timelineHtml += `</div>`;
         
-        let headerHtml = `
-            <div class="app-header">
-                <div class="header-top">
-                    <div class="avatar">${db.name ? db.name.charAt(0).toUpperCase() : "📊"}</div>
-                    <div class="user-info">
-                        <p style="font-size:0.65rem; color:#a0aec0; margin-bottom:4px;">Como gostaria de ser chamado?</p>
-                        <h2 onclick="askUserName()">${db.name || "Definir nome"} ✏️</h2>
-                    </div>
-                </div>
-                <div class="quote-text">${db.quote || "📊 Planeje o fluxo, colha os resultados"}</div>
-            </div>
-            <div class="period-card">
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;"><i class="fas fa-calendar-alt" style="color:#8b5cf6;"></i><span style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:#c084fc;">Período de análise</span></div>
-                <div class="period-selector-row">
-                    <select id="month-selector">${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i)=>`<option value="${i}" ${i===selectedMonth?'selected':''}>${m}</option>`).join('')}</select>
-                    <input type="number" id="year-selector" min="2023" max="2035" value="${selectedYear}" style="width:95px">
-                </div>
-                <button class="period-confirm-btn" onclick="confirmPeriod()"><i class="fas fa-check-circle"></i> Confirmar período</button>
-                <div class="current-period-badge"><small>Período atual</small><strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong></div>
-            </div>
-            <div class="balance-card ${netWorth>0?'positive':netWorth<0?'negative':'neutral'}">
-                <p style="font-size:0.65rem; opacity:0.8;">📊 PATRIMÔNIO LÍQUIDO</p>
-                <div class="main-amount">R$ ${netWorth.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                <div class="grid-info">
-                    <div class="info-item">💰 SALDO DISPONÍVEL <b>R$ ${cashBalance.toFixed(2)}</b></div>
-                    <div class="info-item">📈 INVESTIMENTOS <b>R$ ${totalInvestments.toFixed(2)}</b></div>
-                    <div class="info-item">💳 ${db.card1Name} <b style="color:${card1Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card1Balance).toFixed(2)}</b>${card1Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
-                    <div class="info-item">💳 ${db.card2Name} <b style="color:${card2Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card2Balance).toFixed(2)}</b>${card2Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
-                </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
-                    <small style="opacity:0.7;">💰 SOBRA DO MÊS</small>
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #c084fc;">R$ ${monthlySurplus.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                </div>
-            </div>
-            <div class="card"><h3><i class="fas fa-history"></i> Últimas movimentações</h3>${timelineHtml}</div>
-        `;
-        document.getElementById('tab-home').innerHTML = headerHtml;
-        document.getElementById('month-selector').onchange = function() { selectedMonth = parseInt(this.value); };
-        document.getElementById('year-selector').onchange = function() { selectedYear = parseInt(this.value); };
-    }
-
-    function renderDiamond() {
-        let monthData = getMonthData();
-        let transactions = monthData.transactions || [];
-        let investments = monthData.investments || [];
-        let cashBalance = 0, card1Balance = 0, card2Balance = 0;
-        transactions.forEach(t => {
-            let valueOp = t.type === 'in' ? t.value : -t.value;
-            if (t.method === 'money') cashBalance += valueOp;
-            else if (t.method === 'card1') card1Balance += valueOp;
-            else if (t.method === 'card2') card2Balance += valueOp;
-        });
-        let totalDebt = 0;
-        if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
-        if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
-        let net = cashBalance + investments.reduce((s,i)=>s+i.amount,0) - totalDebt;
-        
-        let isPositive = net >= 0;
-        const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
-        const key = getMonthKey();
-        const { completed, total } = getProgress(key, isPositive);
-        const percent = total > 0 ? (completed / total) * 100 : 0;
-        
-        let html = `<div style="text-align:center;margin-bottom:20px;"><i class="${isPositive ? 'fas fa-gem' : 'fas fa-life-ring'}" style="font-size:2rem;color:${isPositive?'#4ade80':'#f87171'}"></i><h2 style="font-size:1.2rem;margin-top:8px;background:linear-gradient(135deg,#fff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${isPositive ? '💎 Jornada da Prosperidade' : '🆘 Plano de Recuperação'}</h2><p style="font-size:0.75rem;color:#a0aec0;">${isPositive ? 'Continue no caminho da liberdade financeira!' : 'Com planejamento, você pode reverter esta situação.'}</p></div>
-        <div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div>
-        <div class="progress-text">${completed} de ${total} ações concluídas</div>
-        <div class="action-list">`;
-        
-        actions.forEach((action, idx) => {
-            const isCompleted = db.actionProgress[isPositive ? 'positive' : 'negative'][key]?.includes(idx) || false;
-            html += `<div class="action-item ${isCompleted ? 'completed' : ''}" onclick="toggleAction('${key}', ${idx}, ${isPositive})">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} onclick="event.stopPropagation(); toggleAction('${key}', ${idx}, ${isPositive})">
-                        <span class="action-text">${action}</span>
-                    </div>`;
-        });
-        html += `</div>`;
-        document.getElementById('dynamic-tips-card').innerHTML = html;
-        
-        const navVision = document.getElementById('nav-vision');
-        if (navVision) navVision.innerHTML = isPositive ? '<i class="fas fa-gem"></i>Visão' : '<i class="fas fa-life-ring"></i>Recuperação';
-    }
-
-    function renderExtrato() {
-        let monthData = getMonthData();
-        let transactions = monthData.transactions || [];
-        let html = `<div class="card"><h3>📝 Novo lançamento - ${getMonthDisplay()}</h3><div style="display:flex; gap:12px;"><select id="t-type" style="flex:1"><option value="out">💸 Saída</option><option value="in">💰 Entrada</option></select><select id="t-method" style="flex:1"><option value="money">🏦 Dinheiro/Pix</option><option value="card1">💳 ${db.card1Name}</option><option value="card2">💳 ${db.card2Name}</option></select></div><select id="t-cat">${getAllCategories().map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}</select><input type="number" id="t-val" placeholder="Valor (R$)"><input type="text" id="t-desc" placeholder="Descrição"><button onclick="addTransaction()">Salvar lançamento</button></div><div class="card"><h3>📋 Histórico completo - ${getMonthDisplay()}</h3>`;
-        if(transactions.length===0) html += `<div class="empty-state">Nenhum lançamento</div>`;
-        transactions.forEach(t=>{
-            let iconClass = getCategoryIcon(t.category);
-            html += `<div class="list-item"><div style="display:flex; align-items:center; gap:14px; flex:1;"><div class="cat-icon"><i class="${iconClass}"></i></div><div><b>${t.description}</b><br><span class="badge-category"><i class="${iconClass}"></i> ${t.category}</span><br><small style="color:#7e8b9c;">${t.date}</small></div></div><div style="color:${t.type==='in'?'#4ade80':'#f87171'}"><b>${t.type==='in'?'+':'-'} R$ ${t.value.toFixed(2)}</b><br><button onclick="deleteItem('transactions',${t.id})" class="btn-del">x</button></div></div>`;
-        });
-        html += `</div>`;
-        document.getElementById('extrato-content').innerHTML = html;
-    }
-
-    function renderInvest() {
-        let monthData = getMonthData();
-        let investments = monthData.investments || [];
-        let { fixa, variavel, cripto } = getInvestmentsByType();
-        let total = fixa + variavel + cripto;
-        
-        let html = `<div class="card"><h3>📊 Novo Investimento - ${getMonthDisplay()}</h3>
-            <div class="investment-tab-bar">
-                <div class="inv-tab ${currentInvTab === 'renda-fixa' ? 'active' : ''}" onclick="setInvTab('renda-fixa')"><i class="fas fa-building-columns"></i> R.Fixa</div>
-                <div class="inv-tab ${currentInvTab === 'renda-variavel' ? 'active' : ''}" onclick="setInvTab('renda-variavel')"><i class="fas fa-chart-line"></i> R.Variável</div>
-                <div class="inv-tab ${currentInvTab === 'cripto' ? 'active' : ''}" onclick="setInvTab('cripto')"><i class="fab fa-bitcoin"></i> Cripto</div>
-            </div>
-            <div id="inv-panel-renda-fixa" class="inv-panel ${currentInvTab === 'renda-fixa' ? 'active' : ''}">
-                ${RENDA_FIXA_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-fixa').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                <input type="text" id="i-nome-fixa" placeholder="Nome do ativo"><input type="number" id="i-val-fixa" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Fixa')">Registrar</button>
-            </div>
-            <div id="inv-panel-renda-variavel" class="inv-panel ${currentInvTab === 'renda-variavel' ? 'active' : ''}">
-                ${RENDA_VARIAVEL_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-variavel').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                <input type="text" id="i-nome-variavel" placeholder="Nome do ativo"><input type="number" id="i-val-variavel" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Variável')">Registrar</button>
-            </div>
-            <div id="inv-panel-cripto" class="inv-panel ${currentInvTab === 'cripto' ? 'active' : ''}">
-                ${CRIPTO_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-cripto').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                <input type="text" id="i-nome-cripto" placeholder="Nome da criptomoeda"><input type="number" id="i-val-cripto" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Criptomoedas')">Registrar</button>
-            </div>
-        </div>
-        <div class="card"><h3>🧮 Calculadora de Juros Compostos</h3><input type="number" id="s-val" placeholder="Aporte inicial" oninput="simulateCompound()"><input type="number" id="s-mensal" placeholder="Aporte mensal" oninput="simulateCompound()"><input type="number" id="s-mes" placeholder="Meses" oninput="simulateCompound()"><select id="s-taxa" onchange="simulateCompound()"><option value="0.01">1,0% a.m.</option><option value="0.012">1,2% a.m.</option></select><div id="s-res" style="display:none"><b id="res-total" style="color:#c084fc;">R$ 0</b><small id="res-juros"></small></div></div>
-        <div class="card"><h3>📊 Distribuição da Carteira</h3>
-            <div class="chart-container"><canvas id="portfolioChart" width="280" height="250"></canvas></div>
-            <div id="chart-legend" class="chart-legend"></div>
-            <div class="investment-list"><div class="section-title">📈 Seus Ativos</div>`;
-        
-        let fixos = investments.filter(i=>i.assetType === "Renda Fixa");
-        let variaveis = investments.filter(i=>i.assetType === "Renda Variável");
-        let criptos = investments.filter(i=>i.assetType === "Criptomoedas");
-        
-        if(investments.length === 0) {
-            html += `<div class="empty-state">Nenhum investimento registrado</div>`;
-        } else {
-            if(fixos.length > 0) { html += `<div style="margin-top:8px;"><small style="color:#8b5cf6;">🏦 RENDA FIXA</small></div>`; fixos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-building-columns"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
-            if(variaveis.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#ec489a;">📈 RENDA VARIÁVEL</small></div>`; variaveis.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-chart-line"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
-            if(criptos.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#f59e0b;">🪙 CRIPTOMOEDAS</small></div>`; criptos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fab fa-bitcoin"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+        function simulateCompound() {
+            let initial = parseFloat(document.getElementById('s-val')?.value) || 0;
+            let monthly = parseFloat(document.getElementById('s-mensal')?.value) || 0;
+            let months = parseInt(document.getElementById('s-mes')?.value);
+            let rate = parseFloat(document.getElementById('s-taxa')?.value);
+            if(!months || months<=0) { let res = document.getElementById('s-res'); if(res) res.style.display='none'; return; }
+            let total = initial;
+            for(let i=0;i<months;i++) total = (total + monthly)*(1+rate);
+            let invested = initial+(monthly*months);
+            let resDiv = document.getElementById('s-res');
+            if(resDiv) { resDiv.style.display='block'; document.getElementById('res-total').innerHTML = `R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; document.getElementById('res-juros').innerHTML = `Juros: R$ ${(total-invested).toLocaleString('pt-BR')}`; }
         }
-        html += `</div></div>`;
-        document.getElementById('invest-content').innerHTML = html;
-        updatePortfolioChart();
-    }
-
-    let selectedIconForNew = "fas fa-tag";
-    function openIconSelector() {
-        let panel = document.getElementById('icon-selector-panel');
-        if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        let grid = document.getElementById('icon-grid');
-        if(grid) {
-            const icons = ["fas fa-briefcase","fas fa-rocket","fas fa-chart-simple","fas fa-cart-shopping","fas fa-home","fas fa-bolt","fas fa-car","fas fa-graduation-cap","fas fa-heartbeat","fas fa-plane","fas fa-chart-line","fas fa-laptop","fas fa-gift","fas fa-dog","fas fa-coffee"];
-            grid.innerHTML = icons.map(ic => `<div class="icon-option" onclick="selectIcon('${ic}')"><i class="${ic}"></i></div>`).join('');
+        
+        function setInvTab(tab) { currentInvTab = tab; renderInvest(); }
+        
+        function renderAll() {
+            if (!currentUser) return;
+            renderHome(); renderExtrato(); renderInvest(); renderMetas(); renderConfig(); renderDiamond();
+            window.simulateCompound = simulateCompound;
+            window.addInvestmentByType = addInvestmentByType;
+            window.setInvTab = setInvTab;
+            window.addTransaction = addTransaction;
+            window.deleteItem = deleteItem;
+            window.confirmPeriod = confirmPeriod;
+            window.toggleAction = toggleAction;
+            window.openIconSelector = openIconSelector;
+            window.selectIcon = selectIcon;
+            window.confirmAddCategory = confirmAddCategory;
+            window.deleteCustomCategory = deleteCustomCategory;
+            window.saveCards = saveCards;
+            window.setGoalFilter = setGoalFilter;
+            window.addGoalWithImage = addGoalWithImage;
+            window.triggerImageUpload = triggerImageUpload;
+            window.openModal = openModal;
+            window.closeModal = closeModal;
+            window.updateGoalAmount = updateGoalAmount;
+            window.saveStyleSetting = saveStyleSetting;
+            applyStyleSettings();
         }
-    }
-    function selectIcon(ic) { selectedIconForNew = ic; document.querySelectorAll('.icon-option').forEach(el=>el.classList.remove('selected')); if(event.currentTarget) event.currentTarget.classList.add('selected'); }
-    function confirmAddCategory() {
-        let catName = document.getElementById('new-cat-name')?.value.trim();
-        if(!catName) return alert("Digite o nome da categoria");
-        if(getAllCategories().some(c=>c.name.toLowerCase()===catName.toLowerCase())) return alert("Categoria já existe");
-        db.customCategories.push({ name: catName, icon: selectedIconForNew });
-        document.getElementById('new-cat-name').value = "";
-        document.getElementById('icon-selector-panel').style.display = 'none';
-        saveGlobal();
-    }
-    function deleteCustomCategory(catName) { db.customCategories = db.customCategories.filter(c=>c.name!==catName); saveGlobal(); }
-
-    function renderConfig() {
-        let custom = db.customCategories || [];
-        let html = `
-            <div class="card">
-                <h3><i class="fas fa-palette"></i> Personalização Visual</h3>
-                
-                <div class="config-section">
-                    <div class="config-option">
-                        <label>🎨 Tema</label>
-                        <select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)">
-                            <option value="dark" ${db.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option>
-                            <option value="light" ${db.theme === 'light' ? 'selected' : ''}>☀️ Claro</option>
-                            <option value="neon" ${db.theme === 'neon' ? 'selected' : ''}>💚 Neon</option>
-                        </select>
-                    </div>
-                    
-                    <div class="config-option">
-                        <label>🔤 Tamanho da fonte</label>
-                        <select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)">
-                            <option value="small" ${db.fontSize === 'small' ? 'selected' : ''}>Pequeno</option>
-                            <option value="medium" ${db.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option>
-                            <option value="large" ${db.fontSize === 'large' ? 'selected' : ''}>Grande</option>
-                        </select>
-                    </div>
-                    
-                    <div class="config-option">
-                        <label>✨ Animações</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="animations-toggle" ${db.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="config-option">
-                        <label>💫 Efeito de brilho nos botões</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="glow-toggle" ${db.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="config-option">
-                        <label>📦 Modo compacto (cards menores)</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="compact-toggle" ${db.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card"><h3>⚙️ Personalização de Cartões</h3>
-                <input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${db.card1Name}">
-                <input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${db.card2Name}">
-                <button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button>
-                <small style="display:block; margin-top:8px; color:#7e8b9c;">✏️ Edite os nomes e clique em "Salvar" para confirmar</small>
-            </div>
-            
-            <div class="card"><h3>🏷️ Categorias Personalizadas</h3>
-                <div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:#c084fc; width:auto;">Escolher ícone</button></div>
-                <div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div>
-                <div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:#7e8b9c;">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div>
-            </div>
-            
-            <div class="card"><h3>📝 Frase de impacto</h3>
-                <input type="text" id="quote-input" value="${db.quote || ''}" onblur="saveQuote()">
-                <small style="display:block; margin-top:6px; color:#7e8b9c;">Clique fora do campo para salvar</small>
-            </div>
-        `;
-        document.getElementById('config-content').innerHTML = html;
-    }
-
-    function simulateCompound() {
-        let initial = parseFloat(document.getElementById('s-val')?.value) || 0;
-        let monthly = parseFloat(document.getElementById('s-mensal')?.value) || 0;
-        let months = parseInt(document.getElementById('s-mes')?.value);
-        let rate = parseFloat(document.getElementById('s-taxa')?.value);
-        if(!months || months<=0) { let res = document.getElementById('s-res'); if(res) res.style.display='none'; return; }
-        let total = initial;
-        for(let i=0;i<months;i++) total = (total + monthly)*(1+rate);
-        let invested = initial+(monthly*months);
-        let resDiv = document.getElementById('s-res');
-        if(resDiv) { resDiv.style.display='block'; document.getElementById('res-total').innerHTML = `R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; document.getElementById('res-juros').innerHTML = `Juros: R$ ${(total-invested).toLocaleString('pt-BR')}`; }
-    }
-
-    function setInvTab(tab) { currentInvTab = tab; renderInvest(); }
-
-    function renderAll() {
-        renderHome(); renderExtrato(); renderInvest(); renderMetas(); renderConfig(); renderDiamond();
-        window.simulateCompound = simulateCompound;
+        
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if(event?.currentTarget) event.currentTarget.classList.add('active');
+            if(tabId === 'tab-invest') setTimeout(() => { simulateCompound(); updatePortfolioChart(); }, 100);
+            if(tabId === 'tab-diamond') renderDiamond();
+            if(tabId === 'tab-metas') renderMetas();
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            let imageInput = document.getElementById('new-goal-image-input');
+            if (imageInput) {
+                imageInput.addEventListener('change', function(e) {
+                    let file = e.target.files[0];
+                    if (file) {
+                        let reader = new FileReader();
+                        reader.onload = function(event) {
+                            let preview = document.getElementById('new-goal-preview');
+                            if (preview) preview.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+        
+        window.switchTab = switchTab;
         window.addInvestmentByType = addInvestmentByType;
-        window.setInvTab = setInvTab;
         window.addTransaction = addTransaction;
         window.deleteItem = deleteItem;
         window.confirmPeriod = confirmPeriod;
         window.toggleAction = toggleAction;
+        window.askUserName = askUserName;
+        window.saveQuote = saveQuote;
+        window.saveCards = saveCards;
         window.openIconSelector = openIconSelector;
         window.selectIcon = selectIcon;
         window.confirmAddCategory = confirmAddCategory;
         window.deleteCustomCategory = deleteCustomCategory;
-        window.saveCards = saveCards;
         window.setGoalFilter = setGoalFilter;
         window.addGoalWithImage = addGoalWithImage;
         window.triggerImageUpload = triggerImageUpload;
@@ -1202,51 +1623,10 @@
         window.closeModal = closeModal;
         window.updateGoalAmount = updateGoalAmount;
         window.saveStyleSetting = saveStyleSetting;
-        applyStyleSettings();
-    }
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        if(event?.currentTarget) event.currentTarget.classList.add('active');
-        if(tabId === 'tab-invest') setTimeout(() => { simulateCompound(); updatePortfolioChart(); }, 100);
-        if(tabId === 'tab-diamond') renderDiamond();
-        if(tabId === 'tab-metas') renderMetas();
-    }
-
-    // Preview da imagem na criação da meta
-    document.addEventListener('DOMContentLoaded', function() {
-        let imageInput = document.getElementById('new-goal-image-input');
-        if (imageInput) {
-            imageInput.addEventListener('change', function(e) {
-                let file = e.target.files[0];
-                if (file) {
-                    let reader = new FileReader();
-                    reader.onload = function(event) {
-                        let preview = document.getElementById('new-goal-preview');
-                        if (preview) preview.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-    });
-
-    window.onload = () => { if(!db.name) askUserName(); renderAll(); };
-    window.switchTab = switchTab;
-    window.addInvestmentByType = addInvestmentByType;
-    window.addTransaction = addTransaction;
-    window.deleteItem = deleteItem;
-    window.confirmPeriod = confirmPeriod;
-    window.toggleAction = toggleAction;
-    window.askUserName = askUserName;
-    window.saveQuote = saveQuote;
-    window.saveCards = saveCards;
-    window.openIconSelector = openIconSelector;
-    window.selectIcon = selectIcon;
-    window.confirmAddCategory = confirmAddCategory;
-    window.deleteCustomCategory = deleteCustomCategory;
-</script>
+        window.logout = logout;
+        window.showLogin = showLogin;
+        window.showRegister = showRegister;
+        window.showResetPassword = showResetPassword;
+    </script>
 </body>
 </html>
