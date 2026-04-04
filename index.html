@@ -8,10 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
-    <!-- Firebase SDKs - VERSÃO TRADICIONAL (compat) -->
+    <!-- Firebase SDKs - Versão compatível -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -189,16 +191,24 @@
         }
         .hidden { display: none !important; }
         
-        .app-header, .card, .period-card {
+        /* DASHBOARD PROFISSIONAL */
+        .app-header {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             border-radius: 28px;
             padding: 20px;
             margin-bottom: 18px;
             border: 1px solid var(--card-border);
-            transition: all 0.3s;
         }
-        .card:hover { transform: translateY(-2px); border-color: var(--card-border-hover); }
+        
+        .period-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 18px;
+            border: 1px solid var(--card-border);
+        }
         
         .balance-card {
             background: linear-gradient(135deg, #1a1f3a, #0f1228);
@@ -275,19 +285,644 @@
             -webkit-text-fill-color: transparent;
         }
         
-        input, select {
-            width: 100%;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            border-radius: 20px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            color: var(--input-text);
-            font-size: 0.9rem;
-            outline: none;
+        .grid-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 18px;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+            padding-top: 16px;
         }
-        input:focus, select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
-        input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+        .info-item {
+            font-size: 0.65rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .info-item b {
+            font-size: 1rem;
+            display: block;
+            margin-top: 4px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+        
+        .debt-info {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.8;
+            color: var(--danger);
+        }
+        
+        /* TIMELINE PROFISSIONAL */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 18px;
+            border: 1px solid var(--card-border);
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--card-border-hover);
+        }
+        
+        h3 {
+            font-size: 0.75rem;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent-primary);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid var(--accent-primary);
+            padding-left: 12px;
+        }
+        
+        .timeline-container {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .timeline-icon {
+            position: absolute;
+            left: -30px;
+            top: 0;
+            width: 36px;
+            height: 36px;
+            background: var(--card-bg);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            z-index: 1;
+        }
+        .timeline-icon.income {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+            border-color: var(--success);
+        }
+        .timeline-icon.expense {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+        .timeline-content {
+            flex: 1;
+            background: var(--timeline-bg);
+            border-radius: 20px;
+            padding: 12px 16px;
+            transition: all 0.2s;
+            border: 1px solid var(--card-border);
+        }
+        .timeline-content:hover {
+            background: rgba(139, 92, 246, 0.15);
+            transform: translateX(4px);
+            border-color: var(--card-border-hover);
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .timeline-desc {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        .timeline-value {
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+        .timeline-value.income {
+            color: var(--success);
+        }
+        .timeline-value.expense {
+            color: var(--danger);
+        }
+        .timeline-details {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .timeline-category {
+            font-size: 0.65rem;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 3px 10px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+        }
+        .timeline-method {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(139, 92, 246, 0.05);
+            padding: 3px 10px;
+            border-radius: 30px;
+        }
+        .timeline-date {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .empty-timeline {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            background: var(--timeline-bg);
+            border-radius: 24px;
+        }
+        
+        /* EXTRATO PROFISSIONAL */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .item-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+        }
+        .cat-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--badge-category-bg);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .badge-category {
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: var(--badge-category-bg);
+            padding: 2px 8px;
+            border-radius: 30px;
+            display: inline-block;
+            color: var(--accent-primary);
+        }
+        
+        /* INVESTIMENTOS */
+        .investment-tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: rgba(139, 92, 246, 0.15);
+            padding: 6px;
+            border-radius: 40px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .inv-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 8px;
+            border-radius: 32px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .inv-tab.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+        .inv-panel { display: none; }
+        .inv-panel.active { display: block; }
+        
+        .investment-option-card {
+            background: var(--goal-card-bg);
+            border-radius: 20px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--card-border);
+            cursor: pointer;
+        }
+        .investment-option-card .title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        .investment-option-card .desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            background: var(--timeline-bg);
+            border-radius: 24px;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto 20px auto;
+        }
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .investment-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .investment-list-item .name {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .investment-list-item .value {
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin: 16px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        /* METAS */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .filter-chip {
+            background: var(--filter-chip-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .filter-chip.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border-color: transparent;
+        }
+        
+        .stats-mini-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-mini {
+            background: var(--stat-mini-bg);
+            border-radius: 16px;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .stat-mini .value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--accent-primary);
+        }
+        .stat-mini .label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .goal-card {
+            background: var(--goal-card-bg);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--card-border);
+        }
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .goal-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+        .goal-badge {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: var(--badge-category-bg);
+            color: var(--accent-primary);
+        }
+        .goal-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            object-fit: cover;
+            background: rgba(139, 92, 246, 0.2);
+            cursor: pointer;
+        }
+        
+        .progress-container { margin: 12px 0; }
+        .progress-bar-custom {
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            height: 12px;
+            overflow: hidden;
+        }
+        .progress-fill-custom {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.6s ease;
+        }
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .milestones {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            padding: 8px 0;
+            border-top: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+        }
+        .milestone {
+            text-align: center;
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+        .milestone.reached { color: var(--success); }
+        
+        .goal-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .goal-info-item {
+            background: var(--timeline-bg);
+            border-radius: 12px;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .goal-info-item .label {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+        .goal-info-item .value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+        
+        .suggestion-box {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            margin: 12px 0;
+            font-size: 0.7rem;
+            border-left: 3px solid var(--accent-primary);
+            color: var(--text-secondary);
+        }
+        .achievements {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+        .achievement {
+            font-size: 0.6rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+        
+        .goal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .goal-actions button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            margin: 0;
+        }
+        
+        /* IMPORTAÇÃO PDF */
+        .import-area {
+            border: 2px dashed var(--accent-primary);
+            border-radius: 24px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .import-area:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-secondary);
+        }
+        .preview-table {
+            width: 100%;
+            font-size: 0.7rem;
+            border-collapse: collapse;
+        }
+        .preview-table th, .preview-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        /* CONFIGURAÇÕES */
+        .config-section { margin-bottom: 24px; }
+        .config-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .config-option label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .config-select {
+            width: auto;
+            padding: 8px 12px;
+            margin: 0;
+            font-size: 0.8rem;
+            background: var(--input-bg);
+            color: var(--input-text);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+        input:checked + .toggle-slider:before { transform: translateX(26px); }
+        
+        .logout-btn {
+            background: rgba(220, 38, 38, 0.2);
+            color: #f87171;
+            margin-top: 16px;
+        }
+        .logout-btn:hover {
+            background: rgba(220, 38, 38, 0.4);
+            color: white;
+        }
+        
+        .user-email {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+            word-break: break-all;
+        }
+        
+        .period-selector-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .period-confirm-btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+        .current-period-badge {
+            background: rgba(139, 92, 246, 0.15);
+            border-radius: 30px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-top: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .quote-text {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 10px;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 8px 14px;
+            border-radius: 20px;
+            line-height: 1.4;
+        }
+        
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
         
         .field-label {
             font-size: 0.7rem;
@@ -299,45 +934,112 @@
             letter-spacing: 0.5px;
         }
         
-        button {
-            width: 100%;
-            padding: 14px;
-            border-radius: 28px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
+        .image-upload-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
         }
-        button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+        .image-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: rgba(139, 92, 246, 0.2);
         }
-        button:hover::before { width: 300px; height: 300px; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5); }
-        .btn-del {
-            background: rgba(220, 38, 38, 0.2);
-            color: var(--danger);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            width: auto;
-        }
-        .btn-secondary {
+        .upload-btn {
             background: rgba(139, 92, 246, 0.2);
             color: var(--accent-primary);
-            margin-top: 8px;
+            width: auto;
+            padding: 8px 12px;
+            font-size: 0.7rem;
+        }
+        
+        .icon-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            padding: 10px;
+            border-radius: 24px;
+        }
+        .icon-option {
+            width: 42px;
+            height: 42px;
+            background: var(--goal-card-bg);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            border: 1px solid var(--card-border);
+        }
+        .icon-option.selected {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+        
+        .action-list { margin-top: 16px; }
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--card-border);
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .action-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: var(--accent-primary);
+        }
+        .action-item.completed .action-text {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        
+        .progress-bar {
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            height: 8px;
+            margin: 16px 0 8px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+        
+        .notifications-area {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid var(--card-border);
+        }
+        .notification {
+            font-size: 0.7rem;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
         }
         
         .nav-bar {
@@ -378,143 +1080,81 @@
         .tab-content.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .current-period-badge {
-            background: rgba(139, 92, 246, 0.15);
-            border-radius: 30px;
-            padding: 12px 16px;
-            text-align: center;
-            margin-top: 20px;
-            border: 1px solid rgba(139, 92, 246, 0.3);
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
         }
-        .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; border-top: 1px solid rgba(139, 92, 246, 0.3); padding-top: 16px; }
-        .info-item { font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; font-weight: 500; color: var(--text-secondary); }
-        .info-item b { font-size: 1rem; display: block; margin-top: 4px; font-weight: 700; color: var(--accent-primary); }
-        
-        .timeline-container { position: relative; padding-left: 30px; }
-        .timeline-container::before { content: ''; position: absolute; left: 15px; top: 10px; bottom: 10px; width: 2px; background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary)); border-radius: 2px; }
-        .timeline-item { position: relative; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 16px; }
-        .timeline-icon { position: absolute; left: -30px; top: 0; width: 36px; height: 36px; background: var(--card-bg); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 1px solid rgba(139, 92, 246, 0.4); z-index: 1; }
-        .timeline-icon.income { background: rgba(74, 222, 128, 0.2); color: var(--success); border-color: var(--success); }
-        .timeline-icon.expense { background: rgba(248, 113, 113, 0.2); color: var(--danger); border-color: var(--danger); }
-        .timeline-content { flex: 1; background: var(--timeline-bg); border-radius: 20px; padding: 12px 16px; transition: all 0.2s; border: 1px solid var(--card-border); }
-        .empty-timeline { text-align: center; padding: 40px 20px; color: var(--text-secondary); background: var(--timeline-bg); border-radius: 24px; }
-        
-        .investment-tab-bar { display: flex; gap: 8px; margin-bottom: 20px; background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 40px; border: 1px solid rgba(139, 92, 246, 0.3); }
-        .inv-tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 32px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
-        .inv-tab.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; }
-        .inv-panel { display: none; }
-        .inv-panel.active { display: block; }
-        
-        .investment-option-card { background: var(--goal-card-bg); border-radius: 20px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--card-border); cursor: pointer; }
-        .investment-option-card .title { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
-        .investment-option-card .desc { font-size: 0.7rem; color: var(--text-secondary); }
-        
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); background: var(--timeline-bg); border-radius: 24px; }
-        
-        .chart-container { position: relative; width: 100%; max-width: 280px; margin: 0 auto 20px auto; }
-        canvas#portfolioChart { max-height: 250px; width: 100%; }
-        .chart-legend { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 15px; }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-secondary); }
-        .legend-color { width: 12px; height: 12px; border-radius: 50%; }
-        
-        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-        .filter-chip { background: var(--filter-chip-bg); border: 1px solid var(--card-border); border-radius: 30px; padding: 8px 16px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--text-secondary); }
-        .filter-chip.active { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; border-color: transparent; }
-        
-        .stats-mini-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-mini { background: var(--stat-mini-bg); border-radius: 16px; padding: 12px 8px; text-align: center; border: 1px solid var(--card-border); }
-        .stat-mini .value { font-size: 1.2rem; font-weight: 800; color: var(--accent-primary); }
-        .stat-mini .label { font-size: 0.6rem; color: var(--text-secondary); margin-top: 4px; }
-        
-        .goal-card { background: var(--goal-card-bg); border-radius: 24px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--card-border); }
-        .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-        .goal-title { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--text-primary); }
-        .goal-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 20px; background: var(--badge-category-bg); color: var(--accent-primary); }
-        .goal-image { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; background: rgba(139, 92, 246, 0.2); cursor: pointer; }
-        
-        .progress-container { margin: 12px 0; }
-        .progress-bar-custom { background: rgba(139, 92, 246, 0.2); border-radius: 20px; height: 12px; overflow: hidden; }
-        .progress-fill-custom { background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); height: 100%; border-radius: 20px; transition: width 0.6s ease; }
-        .progress-stats { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--text-secondary); }
-        
-        .milestones { display: flex; justify-content: space-between; margin: 12px 0; padding: 8px 0; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
-        .milestone { text-align: center; font-size: 0.6rem; color: var(--text-secondary); }
-        .milestone.reached { color: var(--success); }
-        
-        .goal-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 16px 0; }
-        .goal-info-item { background: var(--timeline-bg); border-radius: 12px; padding: 10px 8px; text-align: center; border: 1px solid var(--card-border); }
-        .goal-info-item .label { font-size: 0.6rem; color: var(--text-secondary); }
-        .goal-info-item .value { font-size: 0.85rem; font-weight: 700; color: var(--accent-primary); }
-        
-        .suggestion-box { background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 10px; margin: 12px 0; font-size: 0.7rem; border-left: 3px solid var(--accent-primary); color: var(--text-secondary); }
-        .achievements { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-        .achievement { font-size: 0.6rem; padding: 4px 8px; border-radius: 20px; background: rgba(74, 222, 128, 0.2); color: var(--success); }
-        
-        .goal-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        .goal-actions button { width: auto; padding: 8px 12px; font-size: 0.7rem; margin: 0; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 90%; }
-        .modal-close { position: absolute; top: 20px; right: 30px; font-size: 2rem; cursor: pointer; color: white; }
-        
-        .notifications-area { background: rgba(139, 92, 246, 0.1); border-radius: 16px; padding: 12px; margin-bottom: 16px; border: 1px solid var(--card-border); }
-        .notification { font-size: 0.7rem; padding: 8px 0; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
-        
-        .distribution-chart { max-width: 200px; margin: 0 auto; }
-        
-        .config-section { margin-bottom: 24px; }
-        .config-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
-        .config-option label { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
-        .config-select { width: auto; padding: 8px 12px; margin: 0; font-size: 0.8rem; background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 12px; }
-        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 24px; }
-        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
-        input:checked + .toggle-slider { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
-        input:checked + .toggle-slider:before { transform: translateX(26px); }
-        
-        .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-        .period-selector-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .quote-text { font-size: 0.7rem; color: var(--text-secondary); font-weight: 500; margin-top: 10px; background: rgba(139, 92, 246, 0.1); padding: 8px 14px; border-radius: 20px; line-height: 1.4; }
-        .cat-icon { width: 44px; height: 44px; background: var(--badge-category-bg); border-radius: 18px; display: flex; align-items: center; justify-content: center; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--card-border); }
-        .badge-category { font-size: 0.7rem; font-weight: 500; background: var(--badge-category-bg); padding: 2px 8px; border-radius: 30px; display: inline-block; color: var(--accent-primary); }
-        .debt-info { font-size: 0.7rem; margin-top: 4px; opacity: 0.8; color: var(--danger); }
-        .icon-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; background: rgba(139, 92, 246, 0.1); padding: 10px; border-radius: 24px; }
-        .icon-option { width: 42px; height: 42px; background: var(--goal-card-bg); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; border: 1px solid var(--card-border); }
-        .icon-option.selected { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; }
-        .category-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--card-border); color: var(--text-primary); }
-        .action-list { margin-top: 16px; }
-        .action-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--card-border); cursor: pointer; color: var(--text-primary); }
-        .action-item input[type="checkbox"] { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--accent-primary); }
-        .action-item.completed .action-text { text-decoration: line-through; color: var(--text-secondary); }
-        h3 { font-size: 0.75rem; letter-spacing: 0.8px; font-weight: 700; text-transform: uppercase; color: var(--accent-primary); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; border-left: 3px solid var(--accent-primary); padding-left: 12px; }
-        
-        .image-upload-preview { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
-        .image-preview { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; background: rgba(139, 92, 246, 0.2); }
-        .upload-btn { background: rgba(139, 92, 246, 0.2); color: var(--accent-primary); width: auto; padding: 8px 12px; font-size: 0.7rem; }
-        
-        .investment-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
-        .investment-list-item .name { font-size: 0.85rem; color: var(--text-primary); }
-        .investment-list-item .value { font-weight: 700; color: var(--accent-primary); }
-        .section-title { font-weight: 700; font-size: 0.8rem; margin: 16px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent-primary); color: var(--accent-primary); }
-        
-        .logout-btn {
-            background: rgba(220, 38, 38, 0.2);
-            color: #f87171;
-            margin-top: 16px;
-        }
-        .logout-btn:hover {
-            background: rgba(220, 38, 38, 0.4);
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 2rem;
+            cursor: pointer;
             color: white;
         }
         
-        .user-email {
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border-radius: 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--input-text);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        input:focus, select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+        input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        button:hover::before { width: 300px; height: 300px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5); }
+        .btn-del {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--danger);
+            padding: 6px 12px;
+            border-radius: 20px;
             font-size: 0.7rem;
-            color: var(--text-secondary);
+            width: auto;
+        }
+        .btn-secondary {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent-primary);
             margin-top: 8px;
-            text-align: center;
-            word-break: break-all;
         }
     </style>
 </head>
@@ -559,7 +1199,7 @@
         </div>
     </div>
 
-    <!-- APP PRINCIPAL (só aparece após login) -->
+    <!-- APP PRINCIPAL -->
     <div id="appScreen" class="hidden">
         <div class="container">
             <div id="tab-home" class="tab-content active"></div>
@@ -600,62 +1240,83 @@
             measurementId: "G-VMSSC0QPS7"
         };
         
-        // Inicializar Firebase (formato tradicional)
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db_firestore = firebase.firestore();
         
         console.log("Firebase inicializado com sucesso!");
         
         // ==================== ESTADO DO APP ====================
-        let db = JSON.parse(localStorage.getItem('planejaflow_v4')) || {
-            name: null, quote: "📊 Planeje o fluxo, colha os resultados",
-            card1Name: "Visa Platinum", card2Name: "Mastercard Black",
-            customCategories: [], months: {}, actionProgress: { positive: {}, negative: {} },
-            theme: "dark", fontSize: "medium", animations: true, glowEffect: true, compactMode: false
+        let currentUser = null;
+        let currentYear = 2025, currentMonth = 3;
+        let selectedYear = 2025, selectedMonth = 3;
+        let currentInvTab = "renda-fixa";
+        let portfolioChart = null;
+        let currentGoalFilter = "all";
+        let goalsDistributionChart = null;
+        
+        // Dados do usuário no Firestore
+        let userData = {
+            name: null,
+            quote: "📊 Planeje o fluxo, colha os resultados",
+            card1Name: "Visa Platinum",
+            card2Name: "Mastercard Black",
+            customCategories: [],
+            months: {},
+            actionProgress: { positive: {}, negative: {} },
+            theme: "dark",
+            fontSize: "medium",
+            animations: true,
+            glowEffect: true,
+            compactMode: false
         };
         
-        // Dados por usuário - cada usuário tem seu próprio storage
-        let currentUser = null;
-        
-        function loadUserData() {
+        // ==================== FUNÇÕES FIRESTORE ====================
+        async function loadUserDataFromFirestore() {
             if (!currentUser) return;
-            const userKey = `planejaflow_${currentUser.uid}`;
-            const savedData = localStorage.getItem(userKey);
-            if (savedData) {
-                db = JSON.parse(savedData);
+            
+            const docRef = db_firestore.collection('users').doc(currentUser.uid);
+            const doc = await docRef.get();
+            
+            if (doc.exists) {
+                userData = doc.data();
             } else {
-                // Reset para dados padrão para novo usuário
-                db = {
+                // Criar documento padrão para novo usuário
+                userData = {
                     name: currentUser.email ? currentUser.email.split('@')[0] : "Usuário",
                     quote: "📊 Planeje o fluxo, colha os resultados",
-                    card1Name: "Visa Platinum", 
+                    card1Name: "Visa Platinum",
                     card2Name: "Mastercard Black",
-                    customCategories: [], 
-                    months: {}, 
+                    customCategories: [],
+                    months: {},
                     actionProgress: { positive: {}, negative: {} },
-                    theme: "dark", 
-                    fontSize: "medium", 
-                    animations: true, 
-                    glowEffect: true, 
+                    theme: "dark",
+                    fontSize: "medium",
+                    animations: true,
+                    glowEffect: true,
                     compactMode: false
                 };
+                await docRef.set(userData);
             }
-            if (!db.months) db.months = {};
-            if (!db.customCategories) db.customCategories = [];
-            if (!db.actionProgress) db.actionProgress = { positive: {}, negative: {} };
-            saveUserData();
+            
+            if (!userData.months) userData.months = {};
+            if (!userData.customCategories) userData.customCategories = [];
+            if (!userData.actionProgress) userData.actionProgress = { positive: {}, negative: {} };
+            
+            applyStyleSettings();
+            renderAll();
         }
         
-        function saveUserData() {
+        async function saveUserDataToFirestore() {
             if (!currentUser) return;
-            const userKey = `planejaflow_${currentUser.uid}`;
-            localStorage.setItem(userKey, JSON.stringify(db));
+            const docRef = db_firestore.collection('users').doc(currentUser.uid);
+            await docRef.set(userData);
         }
         
-        function saveGlobal() { 
-            saveUserData();
-            renderAll(); 
-            applyStyleSettings(); 
+        function saveGlobal() {
+            saveUserDataToFirestore();
+            renderAll();
+            applyStyleSettings();
         }
         
         // ==================== AUTENTICAÇÃO ====================
@@ -697,7 +1358,7 @@
             setTimeout(() => successDiv.classList.add('hidden'), 5000);
         }
         
-        // Login com email/senha
+        // Login
         document.getElementById('btnLogin')?.addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -748,7 +1409,7 @@
             }
         });
         
-        // Link mágico (login sem senha)
+        // Link mágico
         document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
             if (!email) {
@@ -781,14 +1442,13 @@
             }
         }
         
-        // Monitorar estado de autenticação
-        auth.onAuthStateChanged((user) => {
+        // Monitorar autenticação
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
-                loadUserData();
+                await loadUserDataFromFirestore();
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('appScreen').classList.remove('hidden');
-                renderAll();
             } else {
                 currentUser = null;
                 document.getElementById('loginScreen').classList.remove('hidden');
@@ -797,33 +1457,39 @@
             }
         });
         
-        // Logout
-        function logout() {
-            auth.signOut();
-        }
+        function logout() { auth.signOut(); }
         
-        // ==================== FUNÇÕES DO APP ====================
-        let currentYear = 2025, currentMonth = 3;
-        let selectedYear = 2025, selectedMonth = 3;
-        let currentInvTab = "renda-fixa";
-        let portfolioChart = null;
-        let currentGoalFilter = "all";
-        let goalsDistributionChart = null;
-        
+        // ==================== FUNÇÕES DE APOIO ====================
         function applyStyleSettings() {
             document.body.classList.remove('theme-light', 'theme-neon', 'compact', 'no-animation', 'no-glow');
-            if (db.theme === 'light') document.body.classList.add('theme-light');
-            if (db.theme === 'neon') document.body.classList.add('theme-neon');
-            if (db.compactMode) document.body.classList.add('compact');
-            if (!db.animations) document.body.classList.add('no-animation');
-            if (!db.glowEffect) document.body.classList.add('no-glow');
-            let fontSize = db.fontSize || 'medium';
+            if (userData.theme === 'light') document.body.classList.add('theme-light');
+            if (userData.theme === 'neon') document.body.classList.add('theme-neon');
+            if (userData.compactMode) document.body.classList.add('compact');
+            if (!userData.animations) document.body.classList.add('no-animation');
+            if (!userData.glowEffect) document.body.classList.add('no-glow');
+            let fontSize = userData.fontSize || 'medium';
             if (fontSize === 'small') document.body.style.fontSize = '12px';
             else if (fontSize === 'large') document.body.style.fontSize = '18px';
             else document.body.style.fontSize = '';
         }
         
-        function saveStyleSetting(key, value) { db[key] = value; saveGlobal(); }
+        function saveStyleSetting(key, value) { userData[key] = value; saveGlobal(); }
+        
+        function getMonthKey() { return `${currentYear}-${currentMonth}`; }
+        function getMonthData() { 
+            let key = getMonthKey(); 
+            if (!userData.months[key]) userData.months[key] = { transactions: [], investments: [], goals: [] }; 
+            return userData.months[key]; 
+        }
+        
+        function getMonthDisplay() { 
+            const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; 
+            return `${months[currentMonth]} ${currentYear}`; 
+        }
+        
+        function confirmPeriod() { currentYear = selectedYear; currentMonth = selectedMonth; renderAll(); }
+        function askUserName() { let n = prompt("Como gostaria de ser chamado?", userData.name || "Planejador"); if(n?.trim()) { userData.name = n.trim(); saveGlobal(); } }
+        function saveQuote() { let q = document.getElementById('quote-input')?.value; if(q) userData.quote = q; saveGlobal(); }
         
         const BASE_CATEGORIES = [
             { name: "💼 Salário", icon: "fas fa-briefcase" }, { name: "🚀 Renda Extra", icon: "fas fa-rocket" },
@@ -834,66 +1500,14 @@
             { name: "🎉 Lazer", icon: "fas fa-plane" }, { name: "🏦 Investimentos", icon: "fas fa-chart-line" }
         ];
         
-        const POSITIVE_ACTIONS = [
-            "✅ Aumentei meus aportes mensais em 5%",
-            "📊 Revisei meus investimentos e diversifiquei a carteira",
-            "💰 Mantenho reserva de emergência de 6 meses",
-            "📚 Investi em educação financeira (livros/cursos)",
-            "🎯 Defini metas claras para os próximos 12 meses",
-            "🔄 Automatizei meus investimentos mensais",
-            "📈 Acompanhei meus indicadores financeiros"
-        ];
-        
-        const NEGATIVE_ACTIONS = [
-            "📝 Listei todas as minhas dívidas com juros",
-            "✂️ Cortei despesas não essenciais do mês",
-            "🤝 Negociei prazos e juros com credores",
-            "💪 Quitei a dívida mais cara (método avalanche)",
-            "📊 Criei um orçamento realista de recuperação",
-            "🚀 Busquei fontes extras de renda",
-            "🧠 Estudei sobre educação financeira para recomeçar"
-        ];
-        
-        const RENDA_FIXA_OPCOES = [
-            { name: "CDB / RDB", desc: "Certificado de Depósito Bancário", icon: "fas fa-building-columns" },
-            { name: "Tesouro Direto", desc: "Títulos públicos federais", icon: "fas fa-landmark" },
-            { name: "LCI / LCA", desc: "Letras de Crédito (isento IR)", icon: "fas fa-chart-line" }
-        ];
-        const RENDA_VARIAVEL_OPCOES = [
-            { name: "Ações (B3)", desc: "Participação em empresas", icon: "fas fa-chart-simple" },
-            { name: "Fundos Imobiliários (FIIs)", desc: "Investimento em imóveis", icon: "fas fa-building" },
-            { name: "ETFs", desc: "Fundos de índice", icon: "fas fa-chart-line" }
-        ];
-        const CRIPTO_OPCOES = [
-            { name: "Bitcoin (BTC)", desc: "A criptomoeda original", icon: "fab fa-bitcoin" },
-            { name: "Ethereum (ETH)", desc: "Plataforma de contratos inteligentes", icon: "fab fa-ethereum" },
-            { name: "Solana (SOL)", desc: "Blockchain de alta performance", icon: "fas fa-chart-line" },
-            { name: "BNB", desc: "Moeda da Binance Smart Chain", icon: "fas fa-coins" }
-        ];
-        
-        function getMonthKey() { return `${currentYear}-${currentMonth}`; }
-        function getMonthData() { let key = getMonthKey(); if (!db.months[key]) db.months[key] = { transactions: [], investments: [], goals: [] }; return db.months[key]; }
-        
-        function getAllCategories() { return [...BASE_CATEGORIES, ...(db.customCategories || [])]; }
+        function getAllCategories() { return [...BASE_CATEGORIES, ...(userData.customCategories || [])]; }
         function getCategoryIcon(categoryName) {
             const allCats = getAllCategories();
             const found = allCats.find(c => c.name === categoryName);
             return found ? found.icon : "fas fa-receipt";
         }
         
-        function confirmPeriod() { currentYear = selectedYear; currentMonth = selectedMonth; renderAll(); }
-        function askUserName() { let n = prompt("Como gostaria de ser chamado?", db.name || "Planejador"); if(n?.trim()) { db.name = n.trim(); saveGlobal(); } }
-        function saveQuote() { let q = document.getElementById('quote-input')?.value; if(q) db.quote = q; saveGlobal(); }
-        
-        function saveCards() { 
-            const c1 = document.getElementById('c1-n')?.value.trim(); 
-            const c2 = document.getElementById('c2-n')?.value.trim();
-            if(c1) db.card1Name = c1;
-            if(c2) db.card2Name = c2;
-            saveGlobal();
-            alert("✅ Nomes dos cartões salvos com sucesso!");
-        }
-        
+        // ==================== FUNÇÕES DO APP ====================
         function addTransaction() {
             let val = parseFloat(document.getElementById('t-val')?.value);
             let desc = document.getElementById('t-desc')?.value.trim();
@@ -906,7 +1520,11 @@
             saveGlobal();
         }
         
-        function deleteItem(collection, id) { let monthData = getMonthData(); monthData[collection] = monthData[collection].filter(i=>i.id!==id); saveGlobal(); }
+        function deleteItem(collection, id) { 
+            let monthData = getMonthData(); 
+            monthData[collection] = monthData[collection].filter(i=>i.id!==id); 
+            saveGlobal(); 
+        }
         
         function addInvestmentByType(type) {
             let nome, valor;
@@ -919,24 +1537,6 @@
             monthData.investments.push({ id: Date.now(), name: nome, amount: valor, assetType: type });
             saveGlobal();
         }
-        
-        function toggleAction(key, index, isPositive) {
-            const category = isPositive ? 'positive' : 'negative';
-            if (!db.actionProgress[category][key]) db.actionProgress[category][key] = [];
-            const idx = db.actionProgress[category][key].indexOf(index);
-            if (idx === -1) db.actionProgress[category][key].push(index);
-            else db.actionProgress[category][key].splice(idx, 1);
-            saveGlobal();
-        }
-        
-        function getProgress(key, isPositive) {
-            const category = isPositive ? 'positive' : 'negative';
-            const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
-            const completed = db.actionProgress[category][key] || [];
-            return { completed: completed.length, total: actions.length };
-        }
-        
-        function getMonthDisplay() { const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']; return `${months[currentMonth]} ${currentYear}`; }
         
         function getInvestmentsByType() {
             let monthData = getMonthData();
@@ -965,11 +1565,382 @@
             if (legendDiv) legendDiv.innerHTML = legendHtml;
         }
         
-        // Funções de Metas
+        // ==================== IMPORTAÇÃO PDF (OPÇÃO C) ====================
+        let pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        let importedTransactions = [];
+        
+        async function parsePDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+            
+            return extractTransactionsFromText(fullText);
+        }
+        
+        function extractTransactionsFromText(text) {
+            const transactions = [];
+            // Padrão comum em extratos: DATA DESCRIÇÃO VALOR
+            const lines = text.split('\n');
+            
+            for (let line of lines) {
+                // Tentar encontrar padrão de data (DD/MM ou DD/MM/AAAA)
+                const dateMatch = line.match(/(\d{2}\/\d{2}(?:\/\d{4})?)/);
+                // Tentar encontrar valor (R$ 123,45 ou 123,45)
+                const valueMatch = line.match(/R?\$?\s*(\d{1,3}(?:\.\d{3})*,\d{2})/);
+                // Tentar encontrar descrição (texto entre data e valor)
+                
+                if (dateMatch && valueMatch) {
+                    let description = line
+                        .replace(dateMatch[0], '')
+                        .replace(valueMatch[0], '')
+                        .trim();
+                    
+                    let valueStr = valueMatch[1].replace(/\./g, '').replace(',', '.');
+                    let value = parseFloat(valueStr);
+                    let type = value > 0 ? 'in' : 'out';
+                    
+                    if (description.toLowerCase().includes('pix') || description.toLowerCase().includes('ted')) {
+                        description = description.toUpperCase();
+                    }
+                    
+                    transactions.push({
+                        date: dateMatch[0],
+                        description: description.substring(0, 50),
+                        value: Math.abs(value),
+                        type: type,
+                        category: detectCategory(description),
+                        method: detectMethod(description)
+                    });
+                }
+            }
+            
+            return transactions;
+        }
+        
+        function detectCategory(description) {
+            const descLower = description.toLowerCase();
+            if (descLower.includes('salario') || descLower.includes('salário')) return '💼 Salário';
+            if (descLower.includes('mercado') || descLower.includes('supermercado')) return '🛒 Mercado';
+            if (descLower.includes('restaurante') || descLower.includes('ifood')) return '🍽️ Restaurante';
+            if (descLower.includes('luz') || descLower.includes('energia')) return '⚡ Contas';
+            if (descLower.includes('agua') || descLower.includes('água')) return '⚡ Contas';
+            if (descLower.includes('internet')) return '⚡ Contas';
+            if (descLower.includes('uber') || descLower.includes('taxi')) return '🚗 Transporte';
+            if (descLower.includes('faculdade') || descLower.includes('curso')) return '🎓 Educação';
+            if (descLower.includes('farmacia') || descLower.includes('saude')) return '❤️ Saúde';
+            if (descLower.includes('cinema') || descLower.includes('viagem')) return '🎉 Lazer';
+            if (descLower.includes('dividendo')) return '📈 Dividendos';
+            if (descLower.includes('cdb') || descLower.includes('tesouro')) return '🏦 Investimentos';
+            return '📝 Outros';
+        }
+        
+        function detectMethod(description) {
+            const descLower = description.toLowerCase();
+            if (descLower.includes('pix')) return 'money';
+            if (descLower.includes('credito') || descLower.includes('cartão')) return 'card1';
+            return 'money';
+        }
+        
+        function showImportPreview(transactions) {
+            const previewDiv = document.getElementById('import-preview');
+            if (!previewDiv) return;
+            
+            if (transactions.length === 0) {
+                previewDiv.innerHTML = '<div class="empty-state">Nenhuma transação encontrada no PDF</div>';
+                return;
+            }
+            
+            let html = '<h3>📋 Prévia das transações encontradas</h3>';
+            html += '<table class="preview-table">';
+            html += '<tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Categoria</th></tr>';
+            
+            transactions.forEach(t => {
+                html += `<tr>
+                    <td>${t.date}</td>
+                    <td>${t.description}</td>
+                    <td style="color:${t.type === 'in' ? '#4ade80' : '#f87171'}">R$ ${t.value.toFixed(2)}</td>
+                    <td>${t.type === 'in' ? '💰 Entrada' : '💸 Saída'}</td>
+                    <td>${t.category}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            html += '<button onclick="confirmImport()" style="margin-top:16px;">✅ Confirmar importação</button>';
+            previewDiv.innerHTML = html;
+        }
+        
+        function confirmImport() {
+            let monthData = getMonthData();
+            importedTransactions.forEach(t => {
+                monthData.transactions.unshift({ 
+                    ...t, 
+                    id: Date.now() + Math.random(),
+                    date: t.date || new Date().toLocaleDateString()
+                });
+            });
+            saveGlobal();
+            importedTransactions = [];
+            document.getElementById('import-preview').innerHTML = '';
+            alert(`✅ ${importedTransactions.length} transações importadas com sucesso!`);
+            renderExtrato();
+            renderHome();
+        }
+        
+        // ==================== RENDERIZAÇÃO DAS TELAS ====================
+        function renderHome() {
+            let monthData = getMonthData();
+            let transactions = monthData.transactions || [];
+            let investments = monthData.investments || [];
+            
+            let cashBalance = 0, card1Balance = 0, card2Balance = 0;
+            transactions.forEach(t => {
+                let valueOp = t.type === 'in' ? t.value : -t.value;
+                if (t.method === 'money') cashBalance += valueOp;
+                else if (t.method === 'card1') card1Balance += valueOp;
+                else if (t.method === 'card2') card2Balance += valueOp;
+            });
+            
+            let totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
+            let totalDebt = 0;
+            if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
+            if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
+            let netWorth = cashBalance + totalInvestments - totalDebt;
+            let monthlySurplus = cashBalance - totalDebt;
+            
+            let timelineHtml = `<div class="timeline-container">`;
+            if(transactions.length === 0) {
+                timelineHtml = `<div class="empty-timeline"><i class="fas fa-inbox" style="font-size:2rem; opacity:0.5; margin-bottom:8px; display:block;"></i>Nenhuma movimentação neste período</div>`;
+            } else {
+                transactions.slice(0, 10).forEach(t => {
+                    const iconClass = getCategoryIcon(t.category);
+                    const isIncome = t.type === 'in';
+                    timelineHtml += `
+                        <div class="timeline-item">
+                            <div class="timeline-icon ${isIncome ? 'income' : 'expense'}">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="timeline-desc">${t.description}</span>
+                                    <span class="timeline-value ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'} R$ ${t.value.toFixed(2)}</span>
+                                </div>
+                                <div class="timeline-details">
+                                    <span class="timeline-category"><i class="${iconClass}"></i> ${t.category}</span>
+                                    <span class="timeline-method"><i class="fas fa-credit-card"></i> ${t.method === 'money' ? 'Pix/Dinheiro' : t.method === 'card1' ? userData.card1Name : userData.card2Name}</span>
+                                    <span class="timeline-date"><i class="far fa-calendar-alt"></i> ${t.date || new Date().toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            timelineHtml += `</div>`;
+            
+            let headerHtml = `
+                <div class="app-header">
+                    <div class="header-top">
+                        <div class="avatar">${userData.name ? userData.name.charAt(0).toUpperCase() : "📊"}</div>
+                        <div class="user-info">
+                            <div class="question-label">Como gostaria de ser chamado?</div>
+                            <h2 onclick="askUserName()">${userData.name || "Definir nome"} ✏️</h2>
+                            <div class="user-email">${currentUser?.email || ""}</div>
+                        </div>
+                    </div>
+                    <div class="quote-text">${userData.quote || "📊 Planeje o fluxo, colha os resultados"}</div>
+                </div>
+                <div class="period-card">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;"><i class="fas fa-calendar-alt" style="color:var(--accent-primary);"></i><span style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent-primary);">Período de análise</span></div>
+                    <div class="period-selector-row">
+                        <select id="month-selector">${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i)=>`<option value="${i}" ${i===selectedMonth?'selected':''}>${m}</option>`).join('')}</select>
+                        <input type="number" id="year-selector" min="2023" max="2035" value="${selectedYear}" style="width:95px">
+                    </div>
+                    <button class="period-confirm-btn" onclick="confirmPeriod()"><i class="fas fa-check-circle"></i> Confirmar período</button>
+                    <div class="current-period-badge">
+                        <small>📅 Período atual</small>
+                        <strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong>
+                    </div>
+                </div>
+                <div class="balance-card ${netWorth>0?'positive':netWorth<0?'negative':'neutral'}">
+                    <p style="font-size:0.65rem; opacity:0.8;">📊 PATRIMÔNIO LÍQUIDO</p>
+                    <div class="main-amount">R$ ${netWorth.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                    <div class="grid-info">
+                        <div class="info-item">💰 SALDO DISPONÍVEL <b>R$ ${cashBalance.toFixed(2)}</b></div>
+                        <div class="info-item">📈 INVESTIMENTOS <b>R$ ${totalInvestments.toFixed(2)}</b></div>
+                        <div class="info-item">💳 ${userData.card1Name} <b style="color:${card1Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card1Balance).toFixed(2)}</b>${card1Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
+                        <div class="info-item">💳 ${userData.card2Name} <b style="color:${card2Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card2Balance).toFixed(2)}</b>${card2Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
+                        <small style="opacity:0.7;">💰 SOBRA DO MÊS</small>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);">R$ ${monthlySurplus.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                    </div>
+                </div>
+                <div class="card"><h3><i class="fas fa-history"></i> Últimas movimentações</h3>${timelineHtml}</div>
+            `;
+            document.getElementById('tab-home').innerHTML = headerHtml;
+            document.getElementById('month-selector').onchange = function() { selectedMonth = parseInt(this.value); };
+            document.getElementById('year-selector').onchange = function() { selectedYear = parseInt(this.value); };
+        }
+        
+        function renderExtrato() {
+            let monthData = getMonthData();
+            let transactions = monthData.transactions || [];
+            
+            let html = `
+                <div class="card">
+                    <h3>📝 Novo lançamento - ${getMonthDisplay()}</h3>
+                    <div style="display:flex; gap:12px;">
+                        <select id="t-type" style="flex:1"><option value="out">💸 Saída</option><option value="in">💰 Entrada</option></select>
+                        <select id="t-method" style="flex:1"><option value="money">🏦 Dinheiro/Pix</option><option value="card1">💳 ${userData.card1Name}</option><option value="card2">💳 ${userData.card2Name}</option></select>
+                    </div>
+                    <select id="t-cat">${getAllCategories().map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}</select>
+                    <input type="number" id="t-val" placeholder="Valor (R$)">
+                    <input type="text" id="t-desc" placeholder="Descrição">
+                    <button onclick="addTransaction()">Salvar lançamento</button>
+                </div>
+                
+                <div class="card">
+                    <h3>📄 Importar extrato (PDF)</h3>
+                    <div id="pdf-import-area" class="import-area" onclick="document.getElementById('pdf-file').click()">
+                        <i class="fas fa-file-pdf" style="font-size:2rem; margin-bottom:8px; display:block;"></i>
+                        <p>Clique para selecionar um arquivo PDF</p>
+                        <p style="font-size:0.7rem; margin-top:4px;">Formatos: Nubank, Inter, Itaú, Bradesco, Santander</p>
+                        <input type="file" id="pdf-file" accept=".pdf" style="display:none">
+                    </div>
+                    <div id="import-preview"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Histórico completo - ${getMonthDisplay()}</h3>
+            `;
+            
+            if(transactions.length === 0) {
+                html += `<div class="empty-state">Nenhum lançamento</div>`;
+            }
+            transactions.forEach(t=>{
+                let iconClass = getCategoryIcon(t.category);
+                html += `
+                    <div class="list-item">
+                        <div class="item-main">
+                            <div class="cat-icon"><i class="${iconClass}"></i></div>
+                            <div>
+                                <b style="color:var(--text-primary);">${t.description}</b><br>
+                                <span class="badge-category"><i class="${iconClass}"></i> ${t.category}</span><br>
+                                <small style="color:var(--text-secondary);">${t.date}</small>
+                            </div>
+                        </div>
+                        <div style="color:${t.type==='in'?'#4ade80':'#f87171'}">
+                            <b>${t.type==='in'?'+':'-'} R$ ${t.value.toFixed(2)}</b><br>
+                            <button onclick="deleteItem('transactions',${t.id})" class="btn-del">x</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            document.getElementById('extrato-content').innerHTML = html;
+            
+            // Evento de importação PDF
+            document.getElementById('pdf-file')?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const transactions = await parsePDF(file);
+                    importedTransactions = transactions;
+                    showImportPreview(transactions);
+                }
+            });
+        }
+        
+        function renderInvest() {
+            let monthData = getMonthData();
+            let investments = monthData.investments || [];
+            let { fixa, variavel, cripto } = getInvestmentsByType();
+            
+            const RENDA_FIXA_OPCOES = [
+                { name: "CDB / RDB", desc: "Certificado de Depósito Bancário", icon: "fas fa-building-columns" },
+                { name: "Tesouro Direto", desc: "Títulos públicos federais", icon: "fas fa-landmark" },
+                { name: "LCI / LCA", desc: "Letras de Crédito (isento IR)", icon: "fas fa-chart-line" }
+            ];
+            const RENDA_VARIAVEL_OPCOES = [
+                { name: "Ações (B3)", desc: "Participação em empresas", icon: "fas fa-chart-simple" },
+                { name: "Fundos Imobiliários (FIIs)", desc: "Investimento em imóveis", icon: "fas fa-building" },
+                { name: "ETFs", desc: "Fundos de índice", icon: "fas fa-chart-line" }
+            ];
+            const CRIPTO_OPCOES = [
+                { name: "Bitcoin (BTC)", desc: "A criptomoeda original", icon: "fab fa-bitcoin" },
+                { name: "Ethereum (ETH)", desc: "Plataforma de contratos inteligentes", icon: "fab fa-ethereum" },
+                { name: "Solana (SOL)", desc: "Blockchain de alta performance", icon: "fas fa-chart-line" },
+                { name: "BNB", desc: "Moeda da Binance Smart Chain", icon: "fas fa-coins" }
+            ];
+            
+            let html = `<div class="card"><h3>📊 Novo Investimento - ${getMonthDisplay()}</h3>
+                <div class="investment-tab-bar">
+                    <div class="inv-tab ${currentInvTab === 'renda-fixa' ? 'active' : ''}" onclick="setInvTab('renda-fixa')"><i class="fas fa-building-columns"></i> R.Fixa</div>
+                    <div class="inv-tab ${currentInvTab === 'renda-variavel' ? 'active' : ''}" onclick="setInvTab('renda-variavel')"><i class="fas fa-chart-line"></i> R.Variável</div>
+                    <div class="inv-tab ${currentInvTab === 'cripto' ? 'active' : ''}" onclick="setInvTab('cripto')"><i class="fab fa-bitcoin"></i> Cripto</div>
+                </div>
+                <div id="inv-panel-renda-fixa" class="inv-panel ${currentInvTab === 'renda-fixa' ? 'active' : ''}">
+                    ${RENDA_FIXA_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-fixa').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-fixa" placeholder="Nome do ativo"><input type="number" id="i-val-fixa" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Fixa')">Registrar</button>
+                </div>
+                <div id="inv-panel-renda-variavel" class="inv-panel ${currentInvTab === 'renda-variavel' ? 'active' : ''}">
+                    ${RENDA_VARIAVEL_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-variavel').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-variavel" placeholder="Nome do ativo"><input type="number" id="i-val-variavel" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Variável')">Registrar</button>
+                </div>
+                <div id="inv-panel-cripto" class="inv-panel ${currentInvTab === 'cripto' ? 'active' : ''}">
+                    ${CRIPTO_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-cripto').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
+                    <input type="text" id="i-nome-cripto" placeholder="Nome da criptomoeda"><input type="number" id="i-val-cripto" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Criptomoedas')">Registrar</button>
+                </div>
+            </div>
+            <div class="card"><h3>🧮 Calculadora de Juros Compostos</h3><input type="number" id="s-val" placeholder="Aporte inicial" oninput="simulateCompound()"><input type="number" id="s-mensal" placeholder="Aporte mensal" oninput="simulateCompound()"><input type="number" id="s-mes" placeholder="Meses" oninput="simulateCompound()"><select id="s-taxa" onchange="simulateCompound()"><option value="0.01">1,0% a.m.</option><option value="0.012">1,2% a.m.</option></select><div id="s-res" style="display:none"><b id="res-total" style="color:var(--accent-primary);">R$ 0</b><small id="res-juros"></small></div></div>
+            <div class="card"><h3>📊 Distribuição da Carteira</h3>
+                <div class="chart-container"><canvas id="portfolioChart" width="280" height="250"></canvas></div>
+                <div id="chart-legend" class="chart-legend"></div>
+                <div class="investment-list"><div class="section-title">📈 Seus Ativos</div>`;
+            
+            let fixos = investments.filter(i=>i.assetType === "Renda Fixa");
+            let variaveis = investments.filter(i=>i.assetType === "Renda Variável");
+            let criptos = investments.filter(i=>i.assetType === "Criptomoedas");
+            
+            if(investments.length === 0) {
+                html += `<div class="empty-state">Nenhum investimento registrado</div>`;
+            } else {
+                if(fixos.length > 0) { html += `<div style="margin-top:8px;"><small style="color:#8b5cf6;">🏦 RENDA FIXA</small></div>`; fixos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-building-columns"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+                if(variaveis.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#ec489a;">📈 RENDA VARIÁVEL</small></div>`; variaveis.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-chart-line"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+                if(criptos.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#f59e0b;">🪙 CRIPTOMOEDAS</small></div>`; criptos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fab fa-bitcoin"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
+            }
+            html += `</div></div>`;
+            document.getElementById('invest-content').innerHTML = html;
+            updatePortfolioChart();
+        }
+        
+        function simulateCompound() {
+            let initial = parseFloat(document.getElementById('s-val')?.value) || 0;
+            let monthly = parseFloat(document.getElementById('s-mensal')?.value) || 0;
+            let months = parseInt(document.getElementById('s-mes')?.value);
+            let rate = parseFloat(document.getElementById('s-taxa')?.value);
+            if(!months || months<=0) { let res = document.getElementById('s-res'); if(res) res.style.display='none'; return; }
+            let total = initial;
+            for(let i=0;i<months;i++) total = (total + monthly)*(1+rate);
+            let invested = initial+(monthly*months);
+            let resDiv = document.getElementById('s-res');
+            if(resDiv) { resDiv.style.display='block'; document.getElementById('res-total').innerHTML = `R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; document.getElementById('res-juros').innerHTML = `Juros: R$ ${(total-invested).toLocaleString('pt-BR')}`; }
+        }
+        
+        function setInvTab(tab) { currentInvTab = tab; renderInvest(); }
+        
+        // ==================== METAS ====================
         function getGoalType(goal) {
             if (goal.target <= 10000) return "short";
             if (goal.target <= 50000) return "medium";
-            if (goal.name.toLowerCase().includes("educa") || goal.name.toLowerCase().includes("curso") || goal.name.toLowerCase().includes("faculdade")) return "education";
+            if (goal.name.toLowerCase().includes("educa") || goal.name.toLowerCase().includes("curso")) return "education";
             if (goal.name.toLowerCase().includes("viagem") || goal.name.toLowerCase().includes("sonho")) return "dream";
             return "long";
         }
@@ -1256,98 +2227,143 @@
         
         function setGoalFilter(filter) { currentGoalFilter = filter; renderMetas(); }
         
-        function renderHome() {
-            let monthData = getMonthData();
-            let transactions = monthData.transactions || [];
-            let investments = monthData.investments || [];
-            
-            let cashBalance = 0, card1Balance = 0, card2Balance = 0;
-            transactions.forEach(t => {
-                let valueOp = t.type === 'in' ? t.value : -t.value;
-                if (t.method === 'money') cashBalance += valueOp;
-                else if (t.method === 'card1') card1Balance += valueOp;
-                else if (t.method === 'card2') card2Balance += valueOp;
-            });
-            
-            let totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
-            let totalDebt = 0;
-            if (card1Balance < 0) totalDebt += Math.abs(card1Balance);
-            if (card2Balance < 0) totalDebt += Math.abs(card2Balance);
-            let netWorth = cashBalance + totalInvestments - totalDebt;
-            let monthlySurplus = cashBalance - totalDebt;
-            
-            let timelineHtml = `<div class="timeline-container">`;
-            if(transactions.length === 0) {
-                timelineHtml = `<div class="empty-timeline"><i class="fas fa-inbox" style="font-size:2rem; opacity:0.5; margin-bottom:8px; display:block;"></i>Nenhuma movimentação neste período</div>`;
-            } else {
-                transactions.slice(0, 10).forEach(t => {
-                    const iconClass = getCategoryIcon(t.category);
-                    const isIncome = t.type === 'in';
-                    timelineHtml += `
-                        <div class="timeline-item">
-                            <div class="timeline-icon ${isIncome ? 'income' : 'expense'}">
-                                <i class="${iconClass}"></i>
-                            </div>
-                            <div class="timeline-content">
-                                <div class="timeline-header">
-                                    <span class="timeline-desc">${t.description}</span>
-                                    <span class="timeline-value ${isIncome ? 'income' : 'expense'}">${isIncome ? '+' : '-'} R$ ${t.value.toFixed(2)}</span>
-                                </div>
-                                <div class="timeline-details">
-                                    <span class="timeline-category"><i class="${iconClass}"></i> ${t.category}</span>
-                                    <span class="timeline-method"><i class="fas fa-credit-card"></i> ${t.method === 'money' ? 'Pix/Dinheiro' : t.method === 'card1' ? db.card1Name : db.card2Name}</span>
-                                    <span class="timeline-date"><i class="far fa-calendar-alt"></i> ${t.date || new Date().toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
+        // ==================== CONFIGURAÇÕES ====================
+        function saveCards() { 
+            const c1 = document.getElementById('c1-n')?.value.trim(); 
+            const c2 = document.getElementById('c2-n')?.value.trim();
+            if(c1) userData.card1Name = c1;
+            if(c2) userData.card2Name = c2;
+            saveGlobal();
+            alert("✅ Nomes dos cartões salvos com sucesso!");
+        }
+        
+        let selectedIconForNew = "fas fa-tag";
+        function openIconSelector() {
+            let panel = document.getElementById('icon-selector-panel');
+            if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            let grid = document.getElementById('icon-grid');
+            if(grid) {
+                const icons = ["fas fa-briefcase","fas fa-rocket","fas fa-chart-simple","fas fa-cart-shopping","fas fa-home","fas fa-bolt","fas fa-car","fas fa-graduation-cap","fas fa-heartbeat","fas fa-plane","fas fa-chart-line","fas fa-laptop","fas fa-gift","fas fa-dog","fas fa-coffee"];
+                grid.innerHTML = icons.map(ic => `<div class="icon-option" onclick="selectIcon('${ic}')"><i class="${ic}"></i></div>`).join('');
             }
-            timelineHtml += `</div>`;
-            
-            let headerHtml = `
-                <div class="app-header">
-                    <div class="header-top">
-                        <div class="avatar">${db.name ? db.name.charAt(0).toUpperCase() : "📊"}</div>
-                        <div class="user-info">
-                            <div class="question-label">Como gostaria de ser chamado?</div>
-                            <h2 onclick="askUserName()">${db.name || "Definir nome"} ✏️</h2>
-                            <div class="user-email">${currentUser?.email || ""}</div>
+        }
+        function selectIcon(ic) { selectedIconForNew = ic; document.querySelectorAll('.icon-option').forEach(el=>el.classList.remove('selected')); if(event.currentTarget) event.currentTarget.classList.add('selected'); }
+        function confirmAddCategory() {
+            let catName = document.getElementById('new-cat-name')?.value.trim();
+            if(!catName) return alert("Digite o nome da categoria");
+            if(getAllCategories().some(c=>c.name.toLowerCase()===catName.toLowerCase())) return alert("Categoria já existe");
+            userData.customCategories.push({ name: catName, icon: selectedIconForNew });
+            document.getElementById('new-cat-name').value = "";
+            document.getElementById('icon-selector-panel').style.display = 'none';
+            saveGlobal();
+        }
+        function deleteCustomCategory(catName) { 
+            userData.customCategories = userData.customCategories.filter(c=>c.name!==catName); 
+            saveGlobal(); 
+        }
+        
+        function renderConfig() {
+            let custom = userData.customCategories || [];
+            let html = `
+                <div class="card">
+                    <h3><i class="fas fa-palette"></i> Personalização Visual</h3>
+                    <div class="config-section">
+                        <div class="config-option">
+                            <label>🎨 Tema</label>
+                            <select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)">
+                                <option value="dark" ${userData.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option>
+                                <option value="light" ${userData.theme === 'light' ? 'selected' : ''}>☀️ Claro</option>
+                                <option value="neon" ${userData.theme === 'neon' ? 'selected' : ''}>💚 Neon</option>
+                            </select>
+                        </div>
+                        <div class="config-option">
+                            <label>🔤 Tamanho da fonte</label>
+                            <select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)">
+                                <option value="small" ${userData.fontSize === 'small' ? 'selected' : ''}>Pequeno</option>
+                                <option value="medium" ${userData.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option>
+                                <option value="large" ${userData.fontSize === 'large' ? 'selected' : ''}>Grande</option>
+                            </select>
+                        </div>
+                        <div class="config-option">
+                            <label>✨ Animações</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="animations-toggle" ${userData.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="config-option">
+                            <label>💫 Efeito de brilho nos botões</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="glow-toggle" ${userData.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="config-option">
+                            <label>📦 Modo compacto (cards menores)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="compact-toggle" ${userData.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
-                    <div class="quote-text">${db.quote || "📊 Planeje o fluxo, colha os resultados"}</div>
                 </div>
-                <div class="period-card">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;"><i class="fas fa-calendar-alt" style="color:var(--accent-primary);"></i><span style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent-primary);">Período de análise</span></div>
-                    <div class="period-selector-row">
-                        <select id="month-selector">${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i)=>`<option value="${i}" ${i===selectedMonth?'selected':''}>${m}</option>`).join('')}</select>
-                        <input type="number" id="year-selector" min="2023" max="2035" value="${selectedYear}" style="width:95px">
-                    </div>
-                    <button class="period-confirm-btn" onclick="confirmPeriod()"><i class="fas fa-check-circle"></i> Confirmar período</button>
-                    <div class="current-period-badge">
-                        <small>📅 Período atual</small>
-                        <strong><i class="fas fa-calendar-week"></i> ${getMonthDisplay()}</strong>
-                    </div>
+                <div class="card"><h3>⚙️ Personalização de Cartões</h3>
+                    <input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${userData.card1Name}">
+                    <input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${userData.card2Name}">
+                    <button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button>
+                    <small style="display:block; margin-top:8px; color:var(--text-secondary);">✏️ Edite os nomes e clique em "Salvar" para confirmar</small>
                 </div>
-                <div class="balance-card ${netWorth>0?'positive':netWorth<0?'negative':'neutral'}">
-                    <p style="font-size:0.65rem; opacity:0.8;">📊 PATRIMÔNIO LÍQUIDO</p>
-                    <div class="main-amount">R$ ${netWorth.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                    <div class="grid-info">
-                        <div class="info-item">💰 SALDO DISPONÍVEL <b>R$ ${cashBalance.toFixed(2)}</b></div>
-                        <div class="info-item">📈 INVESTIMENTOS <b>R$ ${totalInvestments.toFixed(2)}</b></div>
-                        <div class="info-item">💳 ${db.card1Name} <b style="color:${card1Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card1Balance).toFixed(2)}</b>${card1Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
-                        <div class="info-item">💳 ${db.card2Name} <b style="color:${card2Balance<0?'#f87171':'#4ade80'}">R$ ${Math.abs(card2Balance).toFixed(2)}</b>${card2Balance<0 ? '<div class="debt-info">⬇️ dívida</div>' : ''}</div>
-                    </div>
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(139, 92, 246, 0.3); text-align: center;">
-                        <small style="opacity:0.7;">💰 SOBRA DO MÊS</small>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);">R$ ${monthlySurplus.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                    </div>
+                <div class="card"><h3>🏷️ Categorias Personalizadas</h3>
+                    <div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:var(--accent-primary); width:auto;">Escolher ícone</button></div>
+                    <div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div>
+                    <div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:var(--text-secondary);">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div>
                 </div>
-                <div class="card"><h3><i class="fas fa-history"></i> Últimas movimentações</h3>${timelineHtml}</div>
+                <div class="card"><h3>📝 Frase de impacto</h3>
+                    <input type="text" id="quote-input" value="${userData.quote || ''}" onblur="saveQuote()">
+                    <small style="display:block; margin-top:6px; color:var(--text-secondary);">Clique fora do campo para salvar</small>
+                </div>
+                <div class="card">
+                    <button id="logoutButton" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair da conta</button>
+                </div>
             `;
-            document.getElementById('tab-home').innerHTML = headerHtml;
-            document.getElementById('month-selector').onchange = function() { selectedMonth = parseInt(this.value); };
-            document.getElementById('year-selector').onchange = function() { selectedYear = parseInt(this.value); };
+            document.getElementById('config-content').innerHTML = html;
+        }
+        
+        // ==================== DIAMOND/VISÃO ====================
+        const POSITIVE_ACTIONS = [
+            "✅ Aumentei meus aportes mensais em 5%",
+            "📊 Revisei meus investimentos e diversifiquei a carteira",
+            "💰 Mantenho reserva de emergência de 6 meses",
+            "📚 Investi em educação financeira (livros/cursos)",
+            "🎯 Defini metas claras para os próximos 12 meses",
+            "🔄 Automatizei meus investimentos mensais",
+            "📈 Acompanhei meus indicadores financeiros"
+        ];
+        
+        const NEGATIVE_ACTIONS = [
+            "📝 Listei todas as minhas dívidas com juros",
+            "✂️ Cortei despesas não essenciais do mês",
+            "🤝 Negociei prazos e juros com credores",
+            "💪 Quitei a dívida mais cara (método avalanche)",
+            "📊 Criei um orçamento realista de recuperação",
+            "🚀 Busquei fontes extras de renda",
+            "🧠 Estudei sobre educação financeira para recomeçar"
+        ];
+        
+        function toggleAction(key, index, isPositive) {
+            const category = isPositive ? 'positive' : 'negative';
+            if (!userData.actionProgress[category][key]) userData.actionProgress[category][key] = [];
+            const idx = userData.actionProgress[category][key].indexOf(index);
+            if (idx === -1) userData.actionProgress[category][key].push(index);
+            else userData.actionProgress[category][key].splice(idx, 1);
+            saveGlobal();
+        }
+        
+        function getProgress(key, isPositive) {
+            const category = isPositive ? 'positive' : 'negative';
+            const actions = isPositive ? POSITIVE_ACTIONS : NEGATIVE_ACTIONS;
+            const completed = userData.actionProgress[category][key] || [];
+            return { completed: completed.length, total: actions.length };
         }
         
         function renderDiamond() {
@@ -1378,7 +2394,7 @@
             <div class="action-list">`;
             
             actions.forEach((action, idx) => {
-                const isCompleted = db.actionProgress[isPositive ? 'positive' : 'negative'][key]?.includes(idx) || false;
+                const isCompleted = userData.actionProgress[isPositive ? 'positive' : 'negative'][key]?.includes(idx) || false;
                 html += `<div class="action-item ${isCompleted ? 'completed' : ''}" onclick="toggleAction('${key}', ${idx}, ${isPositive})">
                             <input type="checkbox" ${isCompleted ? 'checked' : ''} onclick="event.stopPropagation(); toggleAction('${key}', ${idx}, ${isPositive})">
                             <span class="action-text">${action}</span>
@@ -1391,192 +2407,15 @@
             if (navVision) navVision.innerHTML = isPositive ? '<i class="fas fa-gem"></i>Visão' : '<i class="fas fa-life-ring"></i>Recuperação';
         }
         
-        function renderExtrato() {
-            let monthData = getMonthData();
-            let transactions = monthData.transactions || [];
-            let html = `<div class="card"><h3>📝 Novo lançamento - ${getMonthDisplay()}</h3><div style="display:flex; gap:12px;"><select id="t-type" style="flex:1"><option value="out">💸 Saída</option><option value="in">💰 Entrada</option></select><select id="t-method" style="flex:1"><option value="money">🏦 Dinheiro/Pix</option><option value="card1">💳 ${db.card1Name}</option><option value="card2">💳 ${db.card2Name}</option></select></div><select id="t-cat">${getAllCategories().map(c=>`<option value="${c.name}">${c.name}</option>`).join('')}</select><input type="number" id="t-val" placeholder="Valor (R$)"><input type="text" id="t-desc" placeholder="Descrição"><button onclick="addTransaction()">Salvar lançamento</button></div><div class="card"><h3>📋 Histórico completo - ${getMonthDisplay()}</h3>`;
-            if(transactions.length===0) html += `<div class="empty-state">Nenhum lançamento</div>`;
-            transactions.forEach(t=>{
-                let iconClass = getCategoryIcon(t.category);
-                html += `<div class="list-item"><div style="display:flex; align-items:center; gap:14px; flex:1;"><div class="cat-icon"><i class="${iconClass}"></i></div><div><b style="color:var(--text-primary);">${t.description}</b><br><span class="badge-category"><i class="${iconClass}"></i> ${t.category}</span><br><small style="color:var(--text-secondary);">${t.date}</small></div></div><div style="color:${t.type==='in'?'#4ade80':'#f87171'}"><b>${t.type==='in'?'+':'-'} R$ ${t.value.toFixed(2)}</b><br><button onclick="deleteItem('transactions',${t.id})" class="btn-del">x</button></div></div>`;
-            });
-            html += `</div>`;
-            document.getElementById('extrato-content').innerHTML = html;
-        }
-        
-        function renderInvest() {
-            let monthData = getMonthData();
-            let investments = monthData.investments || [];
-            let { fixa, variavel, cripto } = getInvestmentsByType();
-            
-            let html = `<div class="card"><h3>📊 Novo Investimento - ${getMonthDisplay()}</h3>
-                <div class="investment-tab-bar">
-                    <div class="inv-tab ${currentInvTab === 'renda-fixa' ? 'active' : ''}" onclick="setInvTab('renda-fixa')"><i class="fas fa-building-columns"></i> R.Fixa</div>
-                    <div class="inv-tab ${currentInvTab === 'renda-variavel' ? 'active' : ''}" onclick="setInvTab('renda-variavel')"><i class="fas fa-chart-line"></i> R.Variável</div>
-                    <div class="inv-tab ${currentInvTab === 'cripto' ? 'active' : ''}" onclick="setInvTab('cripto')"><i class="fab fa-bitcoin"></i> Cripto</div>
-                </div>
-                <div id="inv-panel-renda-fixa" class="inv-panel ${currentInvTab === 'renda-fixa' ? 'active' : ''}">
-                    ${RENDA_FIXA_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-fixa').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                    <input type="text" id="i-nome-fixa" placeholder="Nome do ativo"><input type="number" id="i-val-fixa" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Fixa')">Registrar</button>
-                </div>
-                <div id="inv-panel-renda-variavel" class="inv-panel ${currentInvTab === 'renda-variavel' ? 'active' : ''}">
-                    ${RENDA_VARIAVEL_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-variavel').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                    <input type="text" id="i-nome-variavel" placeholder="Nome do ativo"><input type="number" id="i-val-variavel" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Renda Variável')">Registrar</button>
-                </div>
-                <div id="inv-panel-cripto" class="inv-panel ${currentInvTab === 'cripto' ? 'active' : ''}">
-                    ${CRIPTO_OPCOES.map(op => `<div class="investment-option-card" onclick="document.getElementById('i-nome-cripto').value = '${op.name}'"><div class="title"><i class="${op.icon}"></i> ${op.name}</div><div class="desc">${op.desc}</div></div>`).join('')}
-                    <input type="text" id="i-nome-cripto" placeholder="Nome da criptomoeda"><input type="number" id="i-val-cripto" placeholder="Valor (R$)"><button onclick="addInvestmentByType('Criptomoedas')">Registrar</button>
-                </div>
-            </div>
-            <div class="card"><h3>🧮 Calculadora de Juros Compostos</h3><input type="number" id="s-val" placeholder="Aporte inicial" oninput="simulateCompound()"><input type="number" id="s-mensal" placeholder="Aporte mensal" oninput="simulateCompound()"><input type="number" id="s-mes" placeholder="Meses" oninput="simulateCompound()"><select id="s-taxa" onchange="simulateCompound()"><option value="0.01">1,0% a.m.</option><option value="0.012">1,2% a.m.</option></select><div id="s-res" style="display:none"><b id="res-total" style="color:var(--accent-primary);">R$ 0</b><small id="res-juros"></small></div></div>
-            <div class="card"><h3>📊 Distribuição da Carteira</h3>
-                <div class="chart-container"><canvas id="portfolioChart" width="280" height="250"></canvas></div>
-                <div id="chart-legend" class="chart-legend"></div>
-                <div class="investment-list"><div class="section-title">📈 Seus Ativos</div>`;
-            
-            let fixos = investments.filter(i=>i.assetType === "Renda Fixa");
-            let variaveis = investments.filter(i=>i.assetType === "Renda Variável");
-            let criptos = investments.filter(i=>i.assetType === "Criptomoedas");
-            
-            if(investments.length === 0) {
-                html += `<div class="empty-state">Nenhum investimento registrado</div>`;
-            } else {
-                if(fixos.length > 0) { html += `<div style="margin-top:8px;"><small style="color:#8b5cf6;">🏦 RENDA FIXA</small></div>`; fixos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-building-columns"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
-                if(variaveis.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#ec489a;">📈 RENDA VARIÁVEL</small></div>`; variaveis.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fas fa-chart-line"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
-                if(criptos.length > 0) { html += `<div style="margin-top:12px;"><small style="color:#f59e0b;">🪙 CRIPTOMOEDAS</small></div>`; criptos.forEach(i=>{ html += `<div class="investment-list-item"><span class="name"><i class="fab fa-bitcoin"></i> ${i.name}</span><span class="value">R$ ${i.amount.toFixed(2)}</span><button onclick="deleteItem('investments',${i.id})" class="btn-del" style="margin-left:8px;">x</button></div>`; }); }
-            }
-            html += `</div></div>`;
-            document.getElementById('invest-content').innerHTML = html;
-            updatePortfolioChart();
-        }
-        
-        let selectedIconForNew = "fas fa-tag";
-        function openIconSelector() {
-            let panel = document.getElementById('icon-selector-panel');
-            if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            let grid = document.getElementById('icon-grid');
-            if(grid) {
-                const icons = ["fas fa-briefcase","fas fa-rocket","fas fa-chart-simple","fas fa-cart-shopping","fas fa-home","fas fa-bolt","fas fa-car","fas fa-graduation-cap","fas fa-heartbeat","fas fa-plane","fas fa-chart-line","fas fa-laptop","fas fa-gift","fas fa-dog","fas fa-coffee"];
-                grid.innerHTML = icons.map(ic => `<div class="icon-option" onclick="selectIcon('${ic}')"><i class="${ic}"></i></div>`).join('');
-            }
-        }
-        function selectIcon(ic) { selectedIconForNew = ic; document.querySelectorAll('.icon-option').forEach(el=>el.classList.remove('selected')); if(event.currentTarget) event.currentTarget.classList.add('selected'); }
-        function confirmAddCategory() {
-            let catName = document.getElementById('new-cat-name')?.value.trim();
-            if(!catName) return alert("Digite o nome da categoria");
-            if(getAllCategories().some(c=>c.name.toLowerCase()===catName.toLowerCase())) return alert("Categoria já existe");
-            db.customCategories.push({ name: catName, icon: selectedIconForNew });
-            document.getElementById('new-cat-name').value = "";
-            document.getElementById('icon-selector-panel').style.display = 'none';
-            saveGlobal();
-        }
-        function deleteCustomCategory(catName) { db.customCategories = db.customCategories.filter(c=>c.name!==catName); saveGlobal(); }
-        
-        function renderConfig() {
-            let custom = db.customCategories || [];
-            let html = `
-                <div class="card">
-                    <h3><i class="fas fa-palette"></i> Personalização Visual</h3>
-                    <div class="config-section">
-                        <div class="config-option">
-                            <label>🎨 Tema</label>
-                            <select id="theme-select" class="config-select" onchange="saveStyleSetting('theme', this.value)">
-                                <option value="dark" ${db.theme === 'dark' ? 'selected' : ''}>🌙 Escuro (Padrão)</option>
-                                <option value="light" ${db.theme === 'light' ? 'selected' : ''}>☀️ Claro</option>
-                                <option value="neon" ${db.theme === 'neon' ? 'selected' : ''}>💚 Neon</option>
-                            </select>
-                        </div>
-                        <div class="config-option">
-                            <label>🔤 Tamanho da fonte</label>
-                            <select id="fontsize-select" class="config-select" onchange="saveStyleSetting('fontSize', this.value)">
-                                <option value="small" ${db.fontSize === 'small' ? 'selected' : ''}>Pequeno</option>
-                                <option value="medium" ${db.fontSize === 'medium' ? 'selected' : ''}>Médio (Padrão)</option>
-                                <option value="large" ${db.fontSize === 'large' ? 'selected' : ''}>Grande</option>
-                            </select>
-                        </div>
-                        <div class="config-option">
-                            <label>✨ Animações</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="animations-toggle" ${db.animations ? 'checked' : ''} onchange="saveStyleSetting('animations', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="config-option">
-                            <label>💫 Efeito de brilho nos botões</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="glow-toggle" ${db.glowEffect ? 'checked' : ''} onchange="saveStyleSetting('glowEffect', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="config-option">
-                            <label>📦 Modo compacto (cards menores)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="compact-toggle" ${db.compactMode ? 'checked' : ''} onchange="saveStyleSetting('compactMode', this.checked)">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="card"><h3>⚙️ Personalização de Cartões</h3>
-                    <input type="text" id="c1-n" placeholder="Nome do Cartão 1" value="${db.card1Name}">
-                    <input type="text" id="c2-n" placeholder="Nome do Cartão 2" value="${db.card2Name}">
-                    <button class="config-save-btn" onclick="saveCards()"><i class="fas fa-save"></i> Salvar nomes dos cartões</button>
-                    <small style="display:block; margin-top:8px; color:var(--text-secondary);">✏️ Edite os nomes e clique em "Salvar" para confirmar</small>
-                </div>
-                <div class="card"><h3>🏷️ Categorias Personalizadas</h3>
-                    <div style="display:flex; gap:8px;"><input type="text" id="new-cat-name" placeholder="Nova categoria" style="flex:2;"><button onclick="openIconSelector()" style="background:rgba(139,92,246,0.2); color:var(--accent-primary); width:auto;">Escolher ícone</button></div>
-                    <div id="icon-selector-panel" style="display:none; margin-top:12px;"><div class="icon-selector" id="icon-grid"></div><button onclick="confirmAddCategory()" style="margin-top:8px;">Adicionar categoria</button></div>
-                    <div id="custom-categories-list" style="margin-top:16px;">${custom.length===0?'<small style="color:var(--text-secondary);">Nenhuma categoria personalizada</small>':custom.map(c=>`<div class="category-item"><span><i class="${c.icon}"></i> ${c.name}</span><button class="btn-del" onclick="deleteCustomCategory('${c.name.replace(/'/g,"\\'")}')">x</button></div>`).join('')}</div>
-                </div>
-                <div class="card"><h3>📝 Frase de impacto</h3>
-                    <input type="text" id="quote-input" value="${db.quote || ''}" onblur="saveQuote()">
-                    <small style="display:block; margin-top:6px; color:var(--text-secondary);">Clique fora do campo para salvar</small>
-                </div>
-                <div class="card">
-                    <button id="logoutButton" class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair da conta</button>
-                </div>
-            `;
-            document.getElementById('config-content').innerHTML = html;
-        }
-        
-        function simulateCompound() {
-            let initial = parseFloat(document.getElementById('s-val')?.value) || 0;
-            let monthly = parseFloat(document.getElementById('s-mensal')?.value) || 0;
-            let months = parseInt(document.getElementById('s-mes')?.value);
-            let rate = parseFloat(document.getElementById('s-taxa')?.value);
-            if(!months || months<=0) { let res = document.getElementById('s-res'); if(res) res.style.display='none'; return; }
-            let total = initial;
-            for(let i=0;i<months;i++) total = (total + monthly)*(1+rate);
-            let invested = initial+(monthly*months);
-            let resDiv = document.getElementById('s-res');
-            if(resDiv) { resDiv.style.display='block'; document.getElementById('res-total').innerHTML = `R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`; document.getElementById('res-juros').innerHTML = `Juros: R$ ${(total-invested).toLocaleString('pt-BR')}`; }
-        }
-        
-        function setInvTab(tab) { currentInvTab = tab; renderInvest(); }
-        
+        // ==================== RENDERIZAÇÃO PRINCIPAL ====================
         function renderAll() {
             if (!currentUser) return;
-            renderHome(); renderExtrato(); renderInvest(); renderMetas(); renderConfig(); renderDiamond();
-            window.simulateCompound = simulateCompound;
-            window.addInvestmentByType = addInvestmentByType;
-            window.setInvTab = setInvTab;
-            window.addTransaction = addTransaction;
-            window.deleteItem = deleteItem;
-            window.confirmPeriod = confirmPeriod;
-            window.toggleAction = toggleAction;
-            window.openIconSelector = openIconSelector;
-            window.selectIcon = selectIcon;
-            window.confirmAddCategory = confirmAddCategory;
-            window.deleteCustomCategory = deleteCustomCategory;
-            window.saveCards = saveCards;
-            window.setGoalFilter = setGoalFilter;
-            window.addGoalWithImage = addGoalWithImage;
-            window.triggerImageUpload = triggerImageUpload;
-            window.openModal = openModal;
-            window.closeModal = closeModal;
-            window.updateGoalAmount = updateGoalAmount;
-            window.saveStyleSetting = saveStyleSetting;
-            applyStyleSettings();
+            renderHome();
+            renderExtrato();
+            renderInvest();
+            renderMetas();
+            renderConfig();
+            renderDiamond();
         }
         
         function switchTab(tabId) {
@@ -1589,6 +2428,7 @@
             if(tabId === 'tab-metas') renderMetas();
         }
         
+        // Preview da imagem
         document.addEventListener('DOMContentLoaded', function() {
             let imageInput = document.getElementById('new-goal-image-input');
             if (imageInput) {
@@ -1606,6 +2446,7 @@
             }
         });
         
+        // Exportar funções globais
         window.switchTab = switchTab;
         window.addInvestmentByType = addInvestmentByType;
         window.addTransaction = addTransaction;
@@ -1630,6 +2471,7 @@
         window.showLogin = showLogin;
         window.showRegister = showRegister;
         window.showResetPassword = showResetPassword;
+        window.confirmImport = confirmImport;
     </script>
 </body>
 </html>
