@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+    <!-- Firebase SDKs - VERSÃO TRADICIONAL (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -600,8 +600,11 @@
             measurementId: "G-VMSSC0QPS7"
         };
         
+        // Inicializar Firebase (formato tradicional)
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        
+        console.log("Firebase inicializado com sucesso!");
         
         // ==================== ESTADO DO APP ====================
         let db = JSON.parse(localStorage.getItem('planejaflow_v4')) || {
@@ -799,7 +802,7 @@
             auth.signOut();
         }
         
-        // ==================== FUNÇÕES DO APP (mesmas de antes) ====================
+        // ==================== FUNÇÕES DO APP ====================
         let currentYear = 2025, currentMonth = 3;
         let selectedYear = 2025, selectedMonth = 3;
         let currentInvTab = "renda-fixa";
